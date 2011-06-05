@@ -1,0 +1,6 @@
+
+/*LINTLIBRARY*/
+/*PROTOLIB1*/
+
+#include <sys/types.h>
+#include <sys/foo.h>

@@ -1,0 +1,116 @@
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+#
+# Copyright (c) 1991, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+#
+
+#
+# This Makefile defines all file modules for the directory uts/common
+# and its children. These are the source files which may be considered
+# common to all SunOS systems.
+
+COMMON_CORE_OBJS +=
+
+CORE_OBJS +=	$(COMMON_CORE_OBJS) $($(MACH)_CORE_OBJS)
+
+ZLIB_OBJS =
+
+GENUNIX_OBJS +=
+
+#
+#	Stubs for the stand-alone linker/loader
+#
+sparc_GENSTUBS_OBJS =
+
+i386_GENSTUBS_OBJS =
+
+COMMON_GENSTUBS_OBJS =
+
+GENSTUBS_OBJS += $(COMMON_GENSTUBS_OBJS) $($(MACH)_GENSTUBS_OBJS)
+
+#
+#	DTrace and DTrace Providers
+#
+
+#
+#	Driver (pseudo-driver) Modules
+#
+
+FOO_OBJS += foo.o
+
+
+
+#
+#			streams modules
+#
+
+#
+#			ID mapping module
+#
+
+#
+#			scheduling class modules
+#
+
+#
+#			Inter-Process Communication (IPC) modules
+#
+
+#
+#			bignum module
+#
+
+#
+#			kernel cryptographic framework
+#
+
+#
+#			kernel SSL
+#
+
+#
+#			misc. modules
+#
+
+
+#
+#	Build up defines and paths.
+#
+LINT_DEFS	+= -Dunix
+
+#
+#	This duality can be removed when the native and target compilers
+#	are the same (or at least recognize the same command line syntax!)
+#	It is a bug in the current compilation system that the assember
+#	can't process the -Y I, flag.
+#
+NATIVE_INC_PATH += $(INC_PATH) $(CCYFLAG)$(UTSBASE)/common
+AS_INC_PATH	+= $(INC_PATH) -I$(UTSBASE)/common
+INCLUDE_PATH    += $(INC_PATH) $(CCYFLAG)$(UTSBASE)/common
+
+
+#	nulldriver module
+#
+NULLDRIVER_OBJS =	nulldriver.o
+
+TPM_OBJS =	tpm.o tpm_hcall.o

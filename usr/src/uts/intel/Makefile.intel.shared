@@ -1,0 +1,267 @@
+#
+# CDDL HEADER START
+#
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
+#
+
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+
+#
+#	This makefile contains the common definitions for all intel
+#	implementation architecture independent modules.
+#
+
+#
+#	Machine type (implementation architecture):
+#
+PLATFORM	 = i86pc
+
+#
+#	Everybody needs to know how to build modstubs.o and to locate unix.o.
+#	Note that unix.o must currently be selected from among the possible
+#	"implementation architectures". Note further, that unix.o is only
+#	used as an optional error check for undefines so (theoretically)
+#	any "implementation architectures" could be used. We choose i86pc
+#	because it is the reference port.
+#
+UNIX_DIR	 = $(UTSBASE)/i86pc/unix
+GENLIB_DIR	 = $(UTSBASE)/intel/genunix
+IPDRV_DIR	 = $(UTSBASE)/intel/ip
+MODSTUBS_DIR	 = $(UNIX_DIR)
+DSF_DIR		 = $(UTSBASE)/$(PLATFORM)/genassym
+LINTS_DIR	 = $(OBJS_DIR)
+LINT_LIB_DIR	 = $(UTSBASE)/intel/lint-libs/$(OBJS_DIR)
+
+UNIX_O		 = $(UNIX_DIR)/$(OBJS_DIR)/unix.o
+GENLIB		 = $(GENLIB_DIR)/$(OBJS_DIR)/libgenunix.so
+MODSTUBS_O	 = $(MODSTUBS_DIR)/$(OBJS_DIR)/modstubs.o
+LINT_LIB	 = $(UTSBASE)/i86pc/lint-libs/$(OBJS_DIR)/llib-lunix.ln
+GEN_LINT_LIB	 = $(UTSBASE)/intel/lint-libs/$(OBJS_DIR)/llib-lgenunix.ln
+
+#
+#	Include the makefiles which define build rule templates, the
+#	collection of files per module, and a few specific flags. Note
+#	that order is significant, just as with an include path. The
+#	first build rule template which matches the files name will be
+#	used. By including these in order from most machine dependent
+#	to most machine independent, we allow a machine dependent file
+#	to be used in preference over a machine independent version
+#	(Such as a machine specific optimization, which preserves the
+#	interfaces.)
+#
+include $(UTSTREE)/intel/Makefile.files
+include $(UTSTREE)/common/Makefile.files
+
+#
+# ----- TRANSITIONAL SECTION --------------------------------------------------
+#
+
+#
+#	Not everything which *should* be a module is a module yet. The
+#	following is a list of such objects which are currently part of
+#	genunix but which might someday become kmods.  This must be
+#	defined before we include Makefile.uts, or else genunix's build
+#	won't be as parallel as we might like.
+#
+NOT_YET_KMODS	 =
+
+#
+# ----- END OF TRANSITIONAL SECTION -------------------------------------------
+#
+#	Include machine independent rules. Note that this does not imply
+#	that the resulting module from rules in Makefile.uts is	machine
+#	independent. Only that the build rules are machine independent.
+#
+include $(UTSBASE)/Makefile.uts
+
+#
+#	The following must be defined for all implementations:
+#
+MODSTUBS		= $(UTSBASE)/intel/ia32/ml/modstubs.s
+
+#
+#	Define supported builds
+#
+DEF_BUILDS		= $(DEF_BUILDS64) $(DEF_BUILDS32)
+ALL_BUILDS		= $(ALL_BUILDS64) $(ALL_BUILDS32)
+
+#
+#	x86 or amd64 inline templates
+#
+INLINES_32		= $(UTSBASE)/intel/ml/ia32.il
+INLINES_64		= $(UTSBASE)/intel/ml/amd64.il
+INLINES			+= $(INLINES_$(CLASS))
+
+#
+#	kernel-specific optimizations; override default in Makefile.master
+#
+
+CFLAGS_XARCH_32		= $(i386_CFLAGS)
+CFLAGS_XARCH_64		= $(amd64_CFLAGS)
+CFLAGS_XARCH		= $(CFLAGS_XARCH_$(CLASS))
+
+COPTFLAG_32		= $(COPTFLAG)
+COPTFLAG_64		= $(COPTFLAG64)
+COPTIMIZE		= $(COPTFLAG_$(CLASS))
+
+CFLAGS			= $(CFLAGS_XARCH)
+CFLAGS			+= $(COPTIMIZE)
+CFLAGS			+= $(INLINES) -D_ASM_INLINES
+CFLAGS			+= $(CCMODE)
+CFLAGS			+= $(SPACEFLAG)
+CFLAGS			+= $(CCUNBOUND)
+CFLAGS			+= $(CFLAGS_uts)
+CFLAGS			+= -xstrconst
+
+ASFLAGS_XARCH_32	= $(i386_ASFLAGS)
+ASFLAGS_XARCH_64	= $(amd64_ASFLAGS)
+ASFLAGS_XARCH		= $(ASFLAGS_XARCH_$(CLASS))
+
+ASFLAGS			+= $(ASFLAGS_XARCH)
+
+#
+#	Define the base directory for installation.
+#
+BASE_INS_DIR	= $(ROOT)
+
+#
+#	Debugging level
+#
+#	Special knowledge of which special debugging options affect which
+#	file is used to optimize the build if these flags are changed.
+#
+DEBUG_DEFS_OBJ32	=
+DEBUG_DEFS_DBG32	= -DDEBUG
+DEBUG_DEFS_OBJ64	=
+DEBUG_DEFS_DBG64	= -DDEBUG
+DEBUG_DEFS		= $(DEBUG_DEFS_$(BUILD_TYPE))
+
+DEBUG_COND_OBJ32	:sh = echo \\043
+DEBUG_COND_DBG32	=
+DEBUG_COND_OBJ64	:sh = echo \\043
+DEBUG_COND_DBG64	=
+IF_DEBUG_OBJ		= $(DEBUG_COND_$(BUILD_TYPE))$(OBJS_DIR)/
+
+$(IF_DEBUG_OBJ)syscall.o	:=	DEBUG_DEFS	+= -DSYSCALLTRACE
+$(IF_DEBUG_OBJ)clock.o		:=	DEBUG_DEFS	+= -DKSLICE=1
+
+#
+#	Collect the preprocessor definitions to be associated with *all*
+#	files.
+#
+ALL_DEFS	 = $(DEBUG_DEFS) $(OPTION_DEFS)
+
+#
+#	The kernels modules which are "implementation architecture"
+#	specific for this machine are enumerated below. Note that most
+#	of these modules must exist (in one form or another) for each
+#	architecture.
+#
+#	Common Drivers (usually pseudo drivers) (/kernel/drv)
+#	DRV_KMODS are built both 32-bit and 64-bit
+#	DRV_KMODS_32 are built only 32-bit
+#	DRV_KMODS_64 are built only 64-bit
+#
+DRV_KMODS	+= foo
+
+#
+# Common code drivers
+#
+
+#
+#	Brand modules
+#
+BRAND_KMODS	+=
+
+#
+#	Exec Class Modules (/kernel/exec):
+#
+EXEC_KMODS	+=
+
+#
+#	Scheduling Class Modules (/kernel/sched):
+#
+SCHED_KMODS	+=
+
+#
+#	File System Modules (/kernel/fs):
+#
+FS_KMODS	+=
+
+#
+#	Streams Modules (/kernel/strmod):
+#
+STRMOD_KMODS	+=
+
+#
+#	'System' Modules (/kernel/sys):
+#
+SYS_KMODS	+=
+
+#
+#	'Misc' Modules (/kernel/misc)
+#	MISC_KMODS are built both 32-bit and 64-bit
+#	MISC_KMODS_32 are built only 32-bit
+#	MISC_KMODS_64 are built only 64-bit
+#
+MISC_KMODS	+=
+
+#
+#	Software Cryptographic Providers (/kernel/crypto):
+#
+CRYPTO_KMODS	+=
+
+#
+#	IP Policy Modules (/kernel/ipp)
+#
+IPP_KMODS	+=
+
+#
+#	generic-unix module (/kernel/genunix):
+#
+GENUNIX_KMODS	+=
+
+#
+#	'Dacf' Modules (/kernel/dacf):
+#
+
+#
+#	Performance Counter BackEnd modules (/usr/kernel/pcbe)
+#
+PCBE_KMODS	+=
+
+#
+#	MAC-Type Plugin Modules (/kernel/mac)
+#
+MAC_KMODS	+=
+
+#
+# socketmod (kernel/socketmod)
+#
+SOCKET_KMODS	+=
+
+#
+#	kiconv modules (/kernel/kiconv):
+#
+KICONV_KMODS	+=
+
+#
+#	'Dacf' Modules (/kernel/dacf):
+#
+DACF_KMODS	+=
