@@ -43,7 +43,8 @@ include ../Makefile.master
 FIRST_SUBDIRS=
 
 COMMON_SUBDIRS=		\
-	foo
+	foo \
+	fs.d
 
 i386_SUBDIRS=
 
@@ -106,7 +107,6 @@ _dc: $(DCSUBDIRS)
 #
 # Dependencies
 #
-fs.d: fstyp
 
 $(FIRST_SUBDIRS) $(SUBDIRS) : FRC
 	@if [ -f $@/Makefile  ]; then \
