@@ -39,17 +39,19 @@ CFLAGS	+=	$(CCVERBOSE)
 CFLAGS64 +=	$(CCVERBOSE)
 CPPFLAGS += -D_FILE_OFFSET_BITS=64
 
-.KEEP_STATE:
+CLOBBERFILES += $(PROG)
 
 all:	$(PROG)
 
 lint:	lint_SRCS
 
 clean:
-	$(RM) $(CLEANFILES)
+	$(RM) *.o
 
 include ../../Makefile.targ
 
 %: ../%.c
 	$(LINK.c) -o $@ $< $(LDLIBS)
 	$(POST_PROCESS)
+
+.KEEP_STATE:
