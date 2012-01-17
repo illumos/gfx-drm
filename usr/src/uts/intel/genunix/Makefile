@@ -1,28 +1,50 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2012 Nexenta Systems, Inc.  All rights reserved.
+#
 
 # This is just for ctfmerge; copy from the build machine.
 
 GUDIR=/kernel
 
-DBG_LINKS= debug32/genunix debug64/genunix
-OBJ_LINKS= obj32/genunix obj64/genunix
+LINKS= debug32/genunix debug64/genunix \
+	obj32/genunix obj64/genunix
 
-def:		all
-all: $(DBG_LINKS) $(OBJ_LINKS)
+def: all
+all: $(LINKS)
 
-$(DBG_LINKS) : FRC
-	-mkdir debug32 debug64
-	-rm -f $(DBG_LINKS)
-	ln -s $(GUDIR)/genunix debug32/genunix
-	ln -s $(GUDIR)/amd64/genunix debug64/genunix
+debug32/genunix:
+	-rm -rf debug32
+	mkdir debug32
+	ln -s $(GUDIR)/genunix $@
 
-$(OBJ_LINKS) : FRC
-	-mkdir obj32 obj64
-	-rm -f $(OBJ_LINKS)
-	ln -s $(GUDIR)/genunix obj32/genunix
-	ln -s $(GUDIR)/amd64/genunix obj64/genunix
+debug64/genunix:
+	-rm -rf debug64
+	mkdir debug64
+	ln -s $(GUDIR)/amd64/genunix $@
+
+obj32/genunix:
+	-rm -rf obj32
+	mkdir obj32
+	ln -s $(GUDIR)/genunix $@
+
+obj64/genunix:
+	-rm -rf obj64
+	mkdir obj64
+	ln -s $(GUDIR)/amd64/genunix $@
 
 clean:	FRC
-	-rm -f $(DBG_LINKS) $(OBJ_LINKS)
+	-rm -f $(LINKS)
 
 clobber: clean
 
