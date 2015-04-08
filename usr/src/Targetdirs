@@ -252,7 +252,9 @@ DIRS= \
 	/usr/share/lib/xml \
 	/usr/share/lib/xml/dtd \
 	/usr/share/man \
-	/usr/share/man/man1m \
+	/usr/share/man/man1 \
+	/usr/share/man/man3x \
+	/usr/share/man/man7 \
 	/usr/share/src \
 	/usr/snadm \
 	/usr/snadm/lib \

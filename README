@@ -10,9 +10,17 @@ As provided, this skeleton builds one driver, one library,
 and one command, all named "foo".  These are intentionally
 trivial objects, just to demonstrate how it builds.
 
+The developer script quickbuild builds everything here.
+If you copy quickbuild into a full illumos workspace
+after integrating what you prototype in this skeleton,
+then quickbuild will do a "partial build" for you.
+(Quickly build just these components.)
+
 This does not do any package building (no IPS, no SysV).
-Instead, this uses the script Install-foo as an example of
-how one might do a developer-style "quick" install.
+The quickbuild script can create a tarball that you can
+copy to a test machine and unpack there as a quick way
+to "install".
+
 
 Here is a list of all the places you might want to copy
 to add another driver, library, or command:
@@ -33,4 +41,8 @@ to add another driver, library, or command:
 
 	cmd/foo
 
-	Install-foo
+	man/man1/foo.1
+	man/man3x/libfoo.3x
+	man/man7/foo.7
+
+	quickbuild

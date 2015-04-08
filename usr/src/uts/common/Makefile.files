@@ -99,14 +99,11 @@ FOO_OBJS += foo.o
 LINT_DEFS	+= -Dunix
 
 #
-#	This duality can be removed when the native and target compilers
-#	are the same (or at least recognize the same command line syntax!)
-#	It is a bug in the current compilation system that the assember
-#	can't process the -Y I, flag.
+# This only builds native drivers, so no CCYFLAG
 #
-NATIVE_INC_PATH += $(INC_PATH) $(CCYFLAG)$(UTSBASE)/common
+NATIVE_INC_PATH += $(INC_PATH) -I$(UTSBASE)/common
 AS_INC_PATH	+= $(INC_PATH) -I$(UTSBASE)/common
-INCLUDE_PATH    += $(INC_PATH) $(CCYFLAG)$(UTSBASE)/common
+INCLUDE_PATH    += $(INC_PATH) -I$(UTSBASE)/common
 
 
 #	nulldriver module

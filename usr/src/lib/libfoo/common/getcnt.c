@@ -13,7 +13,6 @@ foo_getcnt(uint32_t *cntp)
 {
 	const char *devnm = "/dev/foo";
 	int fd, rc;
-	uint32_t cnt;
 
 	fd = open(devnm, O_RDONLY, 0);
 	if (fd == -1)
@@ -28,7 +27,7 @@ foo_getcnt(uint32_t *cntp)
 }
 
 const char *
-foo_message()
+foo_message(int cnt)
 {
 	const char *msg;
 

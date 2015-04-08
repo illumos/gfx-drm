@@ -22,5 +22,10 @@ extern "C" {
 #endif
 
 int foo_getcnt(uint32_t *);
+const char *foo_message(uint32_t);
+
+#ifdef	__cplusplus
+}
+#endif
 
 #endif	/* _FOO_H */

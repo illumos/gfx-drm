@@ -14,7 +14,7 @@
  */
 
 #include <stdio.h>
-#include <foo.h>
+#include <libfoo/foo.h>
 #include <libintl.h>
 
 int

@@ -51,3 +51,5 @@ $(DIRS):
 
 $(ROOTDIR)/%: %
 	$(INS.file)
+
+clean clobber:

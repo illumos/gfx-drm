@@ -1,0 +1,8 @@
+# .gitignore for illumos checkouts.
+# Note: this does not try to ignore all files in a fully built workspace.
+# Rather, you are expected to "make clobber" before running "git status".
+.make.state*
+/proto
+/usr/src/TAGS
+/usr/src/cscope.*
+

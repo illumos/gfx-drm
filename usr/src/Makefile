@@ -34,7 +34,7 @@ include Makefile.master
 # it defines TARGETDIRS and ROOTDIRS.
 include Targetdirs
 
-COMMON_SUBDIRS=	uts lib cmd
+COMMON_SUBDIRS=	uts lib cmd man
 sparc_SUBDIRS=
 i386_SUBDIRS=
 
@@ -47,6 +47,8 @@ HDRSUBDIRS=	uts head lib cmd
 #
 CHKHDRSUBDIRS=	head uts lib
 
+# And man page formats
+CHKMANSUBDIRS = man
 
 # The check target also causes smf(5) service manifests to be validated.
 CHKMFSTSUBDIRS=	cmd
@@ -116,7 +118,7 @@ sgs: rootdirs .WAIT sysheaders userheaders .WAIT \
 setup:  bldtools sgs
 
 bldtools:
-#	@cd tools; pwd; $(MAKE) install
+	@cd tools; pwd; $(MAKE) install
 
 #
 rootdirs: $(ROOTDIRS)
@@ -154,7 +156,7 @@ all_xmod_sparc install_xmod_sparc: FRC
 all_xmod_i386 install_xmod_i386: FRC
 	@cd uts/i86; pwd; $(MAKE) TARGET=$(TARGET) svvs
 
-check:	$(CHKHDRSUBDIRS) $(CHKMFSTSUBDIRS)
+check:	$(CHKHDRSUBDIRS) $(CHKMFSTSUBDIRS) $(CHKMANSUBDIRS)
 
 #
 # Cross-reference customization: skip all of the subdirectories that

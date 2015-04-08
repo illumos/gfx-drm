@@ -39,9 +39,7 @@ lint :=		TARGET= lint
 
 HDRS=	foo.h
 HDRDIR =	common
-ROOTHDRDIR=	$(ROOT)/usr/include
-ROOTHDRS=	$(HDRS:%=$(ROOTHDRDIR)/%)
-CHECKHDRS=	$(HDRS:%.h=%.check)
+ROOTHDRDIR=	$(ROOT)/usr/include/libfoo
 POFILE =        libfoo.po
 MSGFILES =      `$(GREP) -l gettext common/*.[ch]`
 
@@ -52,6 +50,11 @@ install: all .WAIT $(SUBDIRS)
 all clean clobber lint: $(SUBDIRS)
 
 install_h: $(ROOTHDRS)
+
+# need to make libfoo dir
+$(ROOTHDRS) : $(ROOTHDRDIR)
+$(ROOTHDRDIR) :
+	$(INS.dir) $@
 
 check:	$(CHECKHDRS)
 
