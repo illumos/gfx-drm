@@ -111,6 +111,14 @@ do_mans() {
 
 
 ################################################################
+
+do_pkg() {
+
+  (cd $SRC/pkg && $make $1)
+}
+
+
+################################################################
 # This builds $SRC/TAGS (and cscope.files) in a helpful order.
 
 do_tags() {
@@ -171,6 +179,7 @@ do
     do_libs $arg
     do_cmds $arg
     do_mans $arg
+    do_pkg  $arg
     ;;
   clean)
     # intentionally skip: lib1, hdrs, tools
@@ -180,12 +189,16 @@ do
     do_kern $arg
     ;;
   clobber)
+    do_pkg  $arg
     do_mans $arg
     do_cmds $arg
     do_libs $arg
     do_kern $arg
     do_hdrs $arg
     clobber_tools
+    ;;
+  pkg)
+    do_pkg install
     ;;
   tags)
     do_tags
@@ -194,7 +207,7 @@ do
     do_tar
     ;;
   *)
-    echo "Usage: $0 {install|lint|check|clean|clobber|tags|tar}";
+    echo "Usage: $0 {install|lint|check|clean|clobber|pkg|tags|tar}";
     exit 1;
     ;;
   esac

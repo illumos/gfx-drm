@@ -21,7 +21,8 @@
 
 #
 # Copyright (c) 1989, 2010, Oracle and/or its affiliates. All rights reserved.
-# Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+# Copyright (c) 2012 by Delphix. All rights reserved.
+# Copyright 2014 Nexenta Systems, Inc.  All rights reserved.
 #
 
 #
@@ -34,7 +35,7 @@ include Makefile.master
 # it defines TARGETDIRS and ROOTDIRS.
 include Targetdirs
 
-COMMON_SUBDIRS=	uts lib cmd man
+COMMON_SUBDIRS=	uts lib cmd man #test
 sparc_SUBDIRS=
 i386_SUBDIRS=
 
@@ -47,11 +48,11 @@ HDRSUBDIRS=	uts head lib cmd
 #
 CHKHDRSUBDIRS=	head uts lib
 
-# And man page formats
-CHKMANSUBDIRS = man
-
 # The check target also causes smf(5) service manifests to be validated.
 CHKMFSTSUBDIRS=	cmd
+
+# And man page formats
+CHKMANSUBDIRS = man
 
 MSGSUBDIRS=	cmd lib
 DOMAINS= \
@@ -64,8 +65,8 @@ DOMAINS= \
 MSGDDIRS=       $(DOMAINS:%=$(MSGROOT)/%)
 MSGDIRS=        $(MSGROOT) $(MSGDDIRS) $(MSGROOT)/LC_TIME
 
-all all_xmod :=		TARGET= all
-install install_xmod :=	TARGET= install
+all :=			TARGET= all
+install :=		TARGET= install
 install1 :=		TARGET= install
 install2 :=		TARGET= install
 install_h :=		TARGET= install_h
@@ -76,13 +77,11 @@ check :=		TARGET= check
 .KEEP_STATE:
 
 #
-# Note: install does not cause a build in pkgdefs.  To build packages,
-#	cd pkgdefs and do a 'make install'
+# Note: install does not cause a build in pkg.  To build packages,
+#	cd pkg and do a 'make install'
 #
 
-all: sgs .WAIT $(SUBDIRS)
-
-install: sgs .WAIT $(SUBDIRS)
+all: sgs .WAIT $(SUBDIRS) pkg
 
 #
 # The _msg build is a two-step process.  First, the _msg dependency
@@ -92,18 +91,36 @@ install: sgs .WAIT $(SUBDIRS)
 # they were staged in $(ROOT)/catalog, and the results placed into the
 # proto area.
 #
+# The stage-licenses target causes the license files needed for
+# packaging to be pulled from $(SRC) and $(CLOSED) and staged in
+# $(ROOT)/licenses.
+#
+install: install1 install2 _msg stage-licenses
+	@cd msg; pwd; $(MAKE) _msg
+	@rm -rf "$(ROOT)/catalog"
+
+stage-licenses: install2
+	@cd pkg; pwd; $(MAKE) stage-licenses
+
+install1: mapfiles closedbins sgs
+
+install2: install1 $(SUBDIRS)
 
 _msg: _msgdirs rootdirs FRC
 	@for m in $(MSGSUBDIRS); do \
 		cd $$m; pwd; $(MAKE) _msg; cd ..; \
 	done
-#	@cd msg; pwd; $(MAKE) _msg
-	@rm -rf "$(ROOT)/catalog"
 
-clean clobber: $(SUBDIRS) head
+clean: $(SUBDIRS) head pkg
+clobber: $(SUBDIRS) head pkg clobber_local
+clobber_local:
+	@cd tools; pwd; $(MAKE) clobber
+	@cd common/mapfiles; pwd; $(MAKE) clobber
+	@cd msg; pwd; $(MAKE) clobber
 
+# no closedbins here
 
-$(SUBDIRS) head: FRC
+$(SUBDIRS) head pkg: FRC
 	@cd $@; pwd; $(MAKE) $(TARGET)
 
 # librpcsvc has a dependency on headers installed by
@@ -143,35 +160,19 @@ sysheaders: FRC
 cmdheaders: FRC
 	@cd cmd; pwd; $(MAKE) install_h
 
-# each xmod target depends on a corresponding MACH-specific pseudotarget
-# before doing common xmod work
-#
-all_xmod install_xmod: $$@_$(MACH)
-	@cd uts/common/sys; pwd; $(MAKE) svvs_h
-
-all_xmod_sparc install_xmod_sparc: FRC
-	@cd uts/sparc; pwd; \
-	  $(MAKE) TARGET=$(TARGET) svvs pm wsdrv
-
-all_xmod_i386 install_xmod_i386: FRC
-	@cd uts/i86; pwd; $(MAKE) TARGET=$(TARGET) svvs
-
 check:	$(CHKHDRSUBDIRS) $(CHKMFSTSUBDIRS) $(CHKMANSUBDIRS)
 
 #
 # Cross-reference customization: skip all of the subdirectories that
 # don't contain actual source code.
 #
-$(CLOSED_BUILD)XRDIRS += ../closed
-XRPRUNE = pkgdefs prototypes xmod
+XRPRUNE = pkg prototypes
 XRINCDIRS = uts/common head ucbhead
-$(CLOSED_BUILD)XRINCDIRS = uts/common ../closed/uts/common head ucbhead
 
 cscope.out tags: FRC
 	$(XREF) -f -x $@
 
 FRC:
-
 
 #
 # Targets for reporting compiler versions; nightly uses these.

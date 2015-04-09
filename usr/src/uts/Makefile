@@ -51,6 +51,7 @@ install		:=	TARGET= install
 install_h	:=	TARGET= install_h
 clean		:=	TARGET= clean
 clobber		:=	TARGET= clobber
+clobber_h	:=	TARGET= clobber
 lint		:=	TARGET= lint
 clean.lint	:=	TARGET= clean.lint
 check		:=	TARGET= check
@@ -113,9 +114,11 @@ all_h: FRC
 
 clean clobber: $($(MACH)_ARCHITECTURES) $(DYNHDRDIRS)
 
+# testing convenience
+clobber_h: $(DYNHDRDIRS)
+
 EXTRA_CLOBBER_TARGETS=
 clobber: $(EXTRA_CLOBBER_TARGETS)
-
 
 clean.lint modlist: $($(MACH)_ARCHITECTURES)
 

@@ -148,6 +148,7 @@ DIRS= \
 	/lib/svc/monitor \
 	/lib/svc/seed \
 	/lib/svc/share \
+	/licenses \
 	/kernel  \
 	/mnt  \
 	/opt  \
