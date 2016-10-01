@@ -21,7 +21,10 @@
 
 #
 # Copyright (c) 1991, 2010, Oracle and/or its affiliates. All rights reserved.
-# Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+# Copyright (c) 2011 Bayard G. Bell. All rights reserved.
+# Copyright (c) 2011 by Delphix. All rights reserved.
+# Copyright (c) 2013 Andrew Stormont.  All rights reserved.
+# Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
 #
 
 #
@@ -151,7 +154,7 @@ LHEAD =	$(ECHO) "\n$@";
 
 # Note: egrep returns "failure" if there are no matches, which is
 # exactly the opposite of what we need.
-LGREP.2 =	if egrep -v ' (_init|_fini|_info|_depends_on) '; then false; else true; fi
+LGREP.2 =	if egrep -v ' (_init|_fini|_info) '; then false; else true; fi
 
 LTAIL =
 
@@ -212,6 +215,17 @@ AS_CPPFLAGS	= $(ALWAYS_DEFS) $(ALL_DEFS) $(CONFIG_DEFS) $(AS_DEFS) \
 # Override the default, the kernel is squeaky clean
 CERRWARN = -errtags=yes -errwarn=%all
 
+CERRWARN += -_gcc=-Wno-missing-braces
+CERRWARN += -_gcc=-Wno-sign-compare
+CERRWARN += -_gcc=-Wno-unknown-pragmas
+CERRWARN += -_gcc=-Wno-unused-parameter
+CERRWARN += -_gcc=-Wno-missing-field-initializers
+
+# DEBUG v. -nd make for frequent unused variables, empty conditions, etc. in
+# -nd builds
+$(RELEASE_BUILD)CERRWARN += -_gcc=-Wno-unused
+$(RELEASE_BUILD)CERRWARN += -_gcc=-Wno-empty-body
+
 C99MODE = $(C99_ENABLE)
 
 CFLAGS_uts		=
@@ -219,10 +233,13 @@ CFLAGS_uts		+= $(STAND_FLAGS_$(CLASS))
 CFLAGS_uts		+= $(CCVERBOSE)
 CFLAGS_uts		+= $(ILDOFF)
 CFLAGS_uts		+= $(XAOPT)
-CFLAGS_uts		+= $(CTF_FLAGS)
+CFLAGS_uts		+= $(CTF_FLAGS_$(CLASS))
 CFLAGS_uts		+= $(CERRWARN)
+CFLAGS_uts		+= $(CCNOAUTOINLINE)
 CFLAGS_uts		+= $(CGLOBALSTATIC)
 CFLAGS_uts		+= $(EXTRA_CFLAGS)
+CFLAGS_uts		+= $(CSOURCEDEBUGFLAGS)
+CFLAGS_uts		+= $(CUSERFLAGS)
 
 #
 #	Declare that $(OBJECTS) and $(LINTS) can be compiled in parallel.
@@ -311,71 +328,24 @@ CTFMERGE_GENUNIX 	= \
 	$(UTSBASE)/$(CTFMERGE_GUDIR)/genunix/$(OBJS_DIR)/genunix
 
 #
-# Used to uniquify a non-genunix module against genunix.  If used in patch
-# mode (PATCH_BUILD != "#"), the patch ID corresponding to the module being
-# built will be used as the label.  If no ID is available, or if patch mode
-# is not being used, the value of $VERSION will be used.
+# Used to uniquify a non-genunix module against genunix. $VERSION is used
+# for the label.
 #
-# For the ease of developers dropping modules onto possibly unrelated systems,
-# you can set NO_GENUNIX_MERGE= in the environment to skip uniquifying against
-# genunix.
+# This is external to illumos gate, so don't uniquify against genunix.
 #
-NO_GENUNIX_UNIQUIFY=$(POUND_SIGN)
-SKIP_GENUNIX_UNIQUIFY=no
-$(NO_GENUNIX_UNIQUIFY)SKIP_GENUNIX_UNIQUIFY=yes
+# CTFMERGE_GENUNIX_DFLAG=-d $(CTFMERGE_GENUNIX)
+  CTFMERGE_GENUNIX_DFLAG=
 
 CTFMERGE_UNIQUIFY_AGAINST_GENUNIX	= \
-	@label="-L VERSION" ; \
-	uniq= ; \
-	if [ -z "$(PATCH_BUILD)" ] ; then \
-		uniq="-D BASE" ; \
-		set -- `$(CTFFINDMOD) -n -r -t $(PMTMO_FILE) $@` ; \
-		if [ "X$$1" != "X-" ] ; then \
-			label="-l $$1" ; \
-			if [ "$$2" != "fcs" ] ; then \
-				uniq="-D $$2" ; \
-			fi ; \
-		fi ; \
-	fi ; \
-	if [ "$(SKIP_GENUNIX_UNIQUIFY)" = "yes" ]; then \
-		uniq= ; \
-	else \
-		uniq="-d $(CTFMERGE_GENUNIX) $$uniq" ; \
-	fi ; \
-	cmd="$(CTFMERGE) $(CTFMRGFLAGS) $$label $$uniq" ; \
-	cmd="$$cmd -o $@ $(OBJECTS) $(CTFEXTRAOBJS)" ; \
-	echo $$cmd ; \
-	$$cmd
+	$(CTFMERGE) $(CTFMRGFLAGS) -L VERSION \
+	$(CTFMERGE_GENUNIX_DFLAG) -o $@ $(OBJECTS) $(CTFEXTRAOBJS)
 
 #
-# Used to merge the genunix module.  genunix has special requirements in
-# patch mode.  In particular, it needs to be able to find the genunix used
-# in the previous version of the KU patch (or the FCS version of genunix in
-# the case of KU 1).
+# Used to merge the genunix module.
 #
 CTFMERGE_GENUNIX_MERGE		= \
-	@if [ -z "$(PATCH_BUILD)" ] ; then \
-		set -- `$(CTFFINDMOD) -b $(OBJS_DIR) -o patch,lastgu -n -r \
-		    -t $(PMTMO_FILE) $(GENUNIX) || true` '' ; \
-		msg= ; \
-		if [ $$$(POUND_SIGN) -eq 1 ] ; \
-		    then msg="Error in $(CTFFINDMOD)" ; \
-		elif [ "X$$1" = "X-" ] ; then msg="Did not get label" ; \
-		elif [ "X$$2" = "X-" ] ; then msg="Did not get withfile" ; \
-		fi ; \
-		if [ -n "$$msg" ] ; then \
-			echo "make ctf: $$msg - removing $(GENUNIX)" ; \
-			$(RM) $(GENUNIX) ; \
-			exit 1 ; \
-		fi ; \
-		label="-l $$1" ; \
-		with="-w $$2" ; \
-	else \
-		label="-L VERSION" ; \
-	fi ; \
-	cmd="$(CTFMERGE) $(CTFMRGFLAGS) $$label $$with -o $@" ; \
-	echo $$cmd "$(OBJECTS) $(CTFEXTRAOBJS) $(IPCTF_TARGET)"; \
-	$$cmd $(OBJECTS) $(CTFEXTRAOBJS) $(IPCTF_TARGET)
+	$(CTFMERGE) $(CTFMRGFLAGS) -L VERSION -o $@ \
+	$(OBJECTS) $(CTFEXTRAOBJS) $(IPCTF_TARGET)
 
 #
 # We ctfmerge the ip objects into genunix to maximize the number of common types
@@ -572,11 +542,6 @@ USR_MOD_DIRS_32		+= $(USR_SOCK_DIR_32)
 #	while the replacement of the SUNW,SPARCstation-10,SX directory by
 #	a symbolic link is being propagated.
 #
-# IMPORTANT:: if you change any of these INS.mumble rules, then you MUST also
-# change the corresponding override definitions in $CLOSED/Makefile.tonic.
-# If you do not do this, then the closedbins build for the OpenSolaris
-# community will break. PS, the gatekeepers will be upset too.
-#
 INS.slink1= $(RM) -r $@; $(SYMLINK) $(PLATFORM) $@
 INS.slink2= $(RM) -r $@; $(SYMLINK) ../$(PLATFORM)/$(@F) $@
 INS.slink3= $(RM) -r $@; $(SYMLINK) $(IMPLEMENTED_PLATFORM) $@
@@ -615,23 +580,12 @@ KMODS = $(GENUNIX_KMODS) $(PARALLEL_KMODS)
 
 $(PARALLEL_KMODS): $(GENUNIX_KMODS)
 
-$(CLOSED_BUILD)CLOSED_KMODS = $(CLOSED_DRV_KMODS) $(CLOSED_TOD_KMODS) \
-	$(CLOSED_MISC_KMODS) $(CLOSED_CPU_KMODS) \
-	$(CLOSED_NLMISC_KMODS) $(CLOSED_DRV_KMODS_$(CLASS))
-
 LINT_KMODS = $(DRV_KMODS) $(EXEC_KMODS) $(FS_KMODS) $(SCHED_KMODS) \
 	  $(TOD_KMODS) $(STRMOD_KMODS) $(SYS_KMODS) $(MISC_KMODS) \
 	  $(MACH_KMODS) $(GSS_KMODS) $(DACF_KMODS) $(IPP_KMODS) \
 	  $(CRYPTO_KMODS) $(PCBE_KMODS) \
 	  $(DRV_KMODS_$(CLASS)) $(MISC_KMODS_$(CLASS)) $(MAC_KMODS) \
 	  $(BRAND_KMODS) $(KICONV_KMODS) $(SOCKET_KMODS)
-
-$(CLOSED_BUILD)CLOSED_LINT_KMODS = $(CLOSED_DRV_KMODS) $(CLOSED_TOD_KMODS) \
-	  $(CLOSED_MISC_KMODS) $(CLOSED_DRV_KMODS_$(CLASS))
-
-THIS_YEAR:sh=	/bin/date +%Y
-$(OBJS_DIR)/logsubr.o	:= CPPFLAGS += -DTHIS_YEAR=$(THIS_YEAR)
-$(OBJS_DIR)/logsubr.ln	:= CPPFLAGS += -DTHIS_YEAR=$(THIS_YEAR)
 
 #
 #	Files to be compiled with -xa, to generate basic block execution
@@ -654,10 +608,8 @@ $(BB_FILES)	:= XAOPT = -xa
 #	kernel which actually gets shipped to customers.  In practice,
 #	$(RELEASE_BUILD) is on for a number of the late beta and fcs builds.
 #
-CODE_COVERAGE=
-$(RELEASE_BUILD)CODE_COVERAGE:sh=	echo \\043
-$(CODE_COVERAGE)$(OBJS_DIR)/unix_bb.o   := CPPFLAGS     += -DKCOV
-$(CODE_COVERAGE)$(OBJS_DIR)/unix_bb.ln  := CPPFLAGS     += -DKCOV
+$(NOT_RELEASE_BUILD)$(OBJS_DIR)/unix_bb.o   := CPPFLAGS     += -DKCOV
+$(NOT_RELEASE_BUILD)$(OBJS_DIR)/unix_bb.ln  := CPPFLAGS     += -DKCOV
 
 #
 #	Do not let unix_bb.o get compiled with -xa!

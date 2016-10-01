@@ -18,12 +18,25 @@
 #
 # CDDL HEADER END
 #
+#
 # Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
 #
-# Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+# Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
+#
+#
+#	This Makefile defines the set of all required, target containing
+# included Makefiles for the sparc architecture.
 #
 
-UTSTREE=$(UTSBASE)
+#
+#	Targets for all implementations:
+#
+include $(UTSBASE)/Makefile.targ
 
-include $(UTSBASE)/sparc/Makefile.targ.shared
+#
+#	Target set for sparc (order is not important, as it is with the
+# isomorphic Makefile.files set).
+#
+include $(UTSBASE)/sparc/Makefile.rules
+include $(UTSBASE)/common/Makefile.rules

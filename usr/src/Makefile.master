@@ -24,6 +24,8 @@
 # Copyright (c) 2012 by Delphix. All rights reserved.
 # Copyright 2014 Garrett D'Amore <garrett@damore.org>
 # Copyright 2015, OmniTI Computer Consulting, Inc. All rights reserved.
+# Copyright 2015 Gary Mills
+# Copyright 2015 Igor Kozhukhov <ikozhukhov@gmail.com>
 #
 
 #
@@ -108,11 +110,6 @@ ONBLD_TOOLS=		$(BUILD_TOOLS)/onbld
 
 JAVA_ROOT=	/usr/java
 
-SFW_ROOT=	/usr/sfw
-SFWINCDIR=	$(SFW_ROOT)/include
-SFWLIBDIR=	$(SFW_ROOT)/lib
-SFWLIBDIR64=	$(SFW_ROOT)/lib/$(MACH64)
-
 GCC_ROOT=	/opt/gcc/4.4.4
 GCCLIBDIR=	$(GCC_ROOT)/lib
 GCCLIBDIR64=	$(GCC_ROOT)/lib/$(MACH64)
@@ -139,15 +136,15 @@ EGREP=		/usr/bin/egrep
 ELFWRAP=	/usr/bin/elfwrap
 KSH93=		/usr/bin/ksh93
 SED=		/usr/bin/sed
-NAWK=		/usr/bin/nawk
+AWK=		/usr/bin/nawk
 CP=		/usr/bin/cp -f
 MCS=		/usr/ccs/bin/mcs
 CAT=            /usr/bin/cat
 ELFDUMP=	/usr/ccs/bin/elfdump
-M4=		/usr/ccs/bin/m4
+M4=		/usr/bin/m4
 STRIP=		/usr/ccs/bin/strip
 LEX=		/usr/ccs/bin/lex
-FLEX=		$(SFW_ROOT)/bin/flex
+FLEX=		/usr/bin/flex
 YACC=		/usr/ccs/bin/yacc
 CPP=		/usr/lib/cpp
 JAVAC=		$(JAVA_ROOT)/bin/javac
@@ -161,8 +158,6 @@ CTFSTABS=	$(ONBLD_TOOLS)/bin/$(MACH)/ctfstabs
 CTFSTRIP=	$(ONBLD_TOOLS)/bin/$(MACH)/ctfstrip
 NDRGEN=		$(ONBLD_TOOLS)/bin/$(MACH)/ndrgen
 GENOFFSETS=	$(ONBLD_TOOLS)/bin/genoffsets
-CTFCVTPTBL=	$(ONBLD_TOOLS)/bin/ctfcvtptbl
-CTFFINDMOD=	$(ONBLD_TOOLS)/bin/ctffindmod
 XREF=		$(ONBLD_TOOLS)/bin/xref
 FIND=		/usr/bin/find
 PERL=		/usr/bin/perl
@@ -183,14 +178,10 @@ UNIQ=		/usr/bin/uniq
 TAR=		/usr/bin/tar
 ASTBINDIR=	/usr/ast/bin
 MSGCC=		$(ASTBINDIR)/msgcc
+MSGFMT=		/usr/bin/msgfmt -s
 
 FILEMODE=	644
 DIRMODE=	755
-
-#
-# The version of the patch makeup table optimized for build-time use.  Used
-# during patch builds only.
-$(PATCH_BUILD)PMTMO_FILE=$(SRC)/patch_makeup_table.mo
 
 # Declare that nothing should be built in parallel.
 # Individual Makefiles can use the .PARALLEL target to declare otherwise.
@@ -335,7 +326,7 @@ CCUNBOUND	= $($(MACH)_CCUNBOUND)
 # overridable for testing.
 sparc_XARCH=	-m32
 sparcv9_XARCH=	-m64
-i386_XARCH=
+i386_XARCH=	-m32
 amd64_XARCH=	-m64 -Ui386 -U__i386
 
 # assembler '-xarch' flag.  Different from compiler '-xarch' flag.
@@ -405,7 +396,7 @@ C99MODE=	$(C99_DISABLE)
 C99LMODE=	$(C99MODE:-xc99%=-Xc99%)
 
 # In most places, assignments to these macros should be appended with +=
-# (CPPFLAGS.master allows values to be prepended to CPPFLAGS).
+# (CPPFLAGS.first allows values to be prepended to CPPFLAGS).
 sparc_CFLAGS=	$(sparc_XARCH) $(CCSTATICSYM)
 sparcv9_CFLAGS=	$(sparcv9_XARCH) -dalign $(CCVERBOSE) $(V9ABIWARN) $(CCREGSYM) \
 		$(CCSTATICSYM)
@@ -553,14 +544,15 @@ NATIVE_CFLAGS=	$(COPTFLAG) $($(NATIVE_MACH)_CFLAGS) $(CCMODE) \
 
 DTEXTDOM=-DTEXT_DOMAIN=\"$(TEXT_DOMAIN)\"	# For messaging.
 DTS_ERRNO=-D_TS_ERRNO
+CPPFLAGS.first=	# Please keep empty.  Only lower makefiles should set this.
 CPPFLAGS.master=$(DTEXTDOM) $(DTS_ERRNO) \
 	$(ENVCPPFLAGS1) $(ENVCPPFLAGS2) $(ENVCPPFLAGS3) $(ENVCPPFLAGS4) \
 	$(ADJUNCT_PROTO:%=-I%/usr/include)
 CPPFLAGS.native=$(ENVCPPFLAGS1) $(ENVCPPFLAGS2) $(ENVCPPFLAGS3) \
 		$(ENVCPPFLAGS4) -I$(NATIVE_ADJUNCT)/include
-CPPFLAGS=	$(CPPFLAGS.master)
-AS_CPPFLAGS=	$(CPPFLAGS.master)
-JAVAFLAGS=	-deprecation
+CPPFLAGS=	$(CPPFLAGS.first) $(CPPFLAGS.master)
+AS_CPPFLAGS=	$(CPPFLAGS.first) $(CPPFLAGS.master)
+JAVAFLAGS=	-source 1.6 -target 1.6 -Xlint:deprecation,-options
 
 #
 # For source message catalogue
@@ -762,7 +754,7 @@ NATIVE_MACH=	$(MACH:amd64=i386)
 #
 SPRO_ROOT=		$(BUILD_TOOLS)/SUNWspro
 SPRO_VROOT=		$(SPRO_ROOT)/SS12
-GNU_ROOT=		$(SFW_ROOT)
+GNU_ROOT=		/usr
 
 # Till SS12u1 formally becomes the NV CBE, LINT is hard
 # coded to be picked up from the $SPRO_ROOT/sunstudio12.1/
@@ -1078,7 +1070,7 @@ PKGPUBLISHER_NONREDIST=	on-extra
 		  -e "x"					\
 		  -e "s/\(.*\)gettext *\"[^\"]*\"\(.*\)/\1\2/"	\
 		  -e "t a"					\
-	       $< | sort -u | awk '{ print "msgid\t" $$0 "\nmsgstr" }' > $@
+	       $< | sort -u | $(AWK) '{ print "msgid\t" $$0 "\nmsgstr" }' > $@
 
 #
 # Python and Perl executable and message catalog build rules.
@@ -1132,6 +1124,10 @@ CPPFORPO=$(COMPILE.cpp:\"$(TEXT_DOMAIN)\"=TEXT_DOMAIN)
 	$(RM) lex.yy.c
 
 .c.po:
+	$(CPPFORPO) $< > $<.i
+	$(BUILD.po)
+
+.cc.po:
 	$(CPPFORPO) $< > $<.i
 	$(BUILD.po)
 
