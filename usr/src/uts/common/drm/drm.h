@@ -36,13 +36,13 @@
 #ifndef _DRM_H_
 #define _DRM_H_
 
-#if defined(__linux__)
+#if   defined(__linux__)
 
 #include <linux/types.h>
 #include <asm/ioctl.h>
 typedef unsigned int drm_handle_t;
 
-#else /* One of the BSDs or Solaris */
+#else /* One of the BSDs */
 
 #include <sys/ioccom.h>
 #include <sys/types.h>
@@ -54,40 +54,10 @@ typedef int32_t  __s32;
 typedef uint32_t __u32;
 typedef int64_t  __s64;
 typedef uint64_t __u64;
-
-#if defined(__SOLARIS__) || defined(__sun)
-#include <sys/types32.h>
-typedef unsigned long long drm_handle_t;
-
-#else /* !__SOLARIS__ */
+typedef size_t   __kernel_size_t;
 typedef unsigned long drm_handle_t;
 
-#endif /* __SOLARIS__ || __sun */
-
-
-#endif /* __linux__ */
-/* Solaris-specific. */
-#if defined(__SOLARIS__) || defined(__sun)
-
-#define        _IOC_NRBITS     8
-#define        _IOC_TYPEBITS   8
-#define        _IOC_SIZEBITS   13
-#define        _IOC_DIRBITS    3
-
-#define        _IOC_NRSHIFT    0
-#define        _IOC_TYPESHIFT  (_IOC_NRSHIFT + _IOC_NRBITS)
-#define        _IOC_SIZESHIFT  (_IOC_TYPESHIFT + _IOC_TYPEBITS)
-#define        _IOC_DIRSHIFT   (_IOC_SIZESHIFT + _IOC_SIZEBITS)
-
-#define        _IOC(dir, type, nr, size) \
-       (((dir) /* already shifted */) | \
-       ((type) << _IOC_TYPESHIFT) | \
-       ((nr)   << _IOC_NRSHIFT) | \
-       ((size) << _IOC_SIZESHIFT))
-
-#define _IOC_TYPE(req)	((req >> _IOC_TYPESHIFT) & ((1 << _IOC_TYPEBITS) -1))
-
-#endif /* __Solaris__ or __sun */
+#endif
 
 #define DRM_NAME	"drm"	  /**< Name in kernel, /dev, and /proc */
 #define DRM_MIN_ORDER	5	  /**< At least 2^5 bytes = 32 bytes */
@@ -160,11 +130,11 @@ struct drm_version {
 	int version_major;	  /**< Major version */
 	int version_minor;	  /**< Minor version */
 	int version_patchlevel;	  /**< Patch level */
-	size_t name_len;	  /**< Length of name buffer */
+	__kernel_size_t name_len;	  /**< Length of name buffer */
 	char *name;	  /**< Name of driver */
-	size_t date_len;	  /**< Length of date buffer */
+	__kernel_size_t date_len;	  /**< Length of date buffer */
 	char *date;	  /**< User-space buffer to hold date */
-	size_t desc_len;	  /**< Length of desc buffer */
+	__kernel_size_t desc_len;	  /**< Length of desc buffer */
 	char *desc;	  /**< User-space buffer to hold desc */
 };
 
@@ -174,7 +144,7 @@ struct drm_version {
  * \sa drmGetBusid() and drmSetBusId().
  */
 struct drm_unique {
-	size_t unique_len;	  /**< Length of unique */
+	__kernel_size_t unique_len;	  /**< Length of unique */
 	char *unique;	  /**< Unique name for driver instantiation */
 };
 
@@ -211,8 +181,7 @@ enum drm_map_type {
 	_DRM_SHM = 2,		  /**< shared, cached */
 	_DRM_AGP = 3,		  /**< AGP/GART */
 	_DRM_SCATTER_GATHER = 4,  /**< Scatter/gather memory for PCI DMA */
-	_DRM_CONSISTENT = 5,	  /**< Consistent memory for PCI DMA */
-	_DRM_GEM = 6		  /**< GEM object */
+	_DRM_CONSISTENT = 5	  /**< Consistent memory for PCI DMA */
 };
 
 /**
@@ -241,11 +210,11 @@ struct drm_ctx_priv_map {
  * \sa drmAddMap().
  */
 struct drm_map {
-	unsigned long long offset;	 /**< Requested physical address (0 for SAREA)*/
+	unsigned long offset;	 /**< Requested physical address (0 for SAREA)*/
 	unsigned long size;	 /**< Requested physical size (bytes) */
 	enum drm_map_type type;	 /**< Type of memory to map */
 	enum drm_map_flags flags;	 /**< Flags */
-	unsigned long long handle;  /**< User-space: "Handle" to pass to mmap() */
+	void *handle;		 /**< User-space: "Handle" to pass to mmap() */
 				 /**< Kernel-space: kernel-virtual address */
 	int mtrr;		 /**< MTRR slot used */
 	/*   Private data */
@@ -353,22 +322,18 @@ enum drm_dma_flags {
  *
  * \sa drmAddBufs().
  */
-
-typedef enum {
-       _DRM_PAGE_ALIGN = 0x01, /**< Align on page boundaries for DMA */
-       _DRM_AGP_BUFFER = 0x02, /**< Buffer is in AGP space */
-       _DRM_SG_BUFFER  = 0x04, /**< Scatter/gather memory buffer */
-       _DRM_FB_BUFFER  = 0x08, /**< Buffer is in frame buffer */
-       _DRM_PCI_BUFFER_RO = 0x10 /**< Map PCI DMA buffer read-only */
-} drm_buf_flag;
-
-
 struct drm_buf_desc {
 	int count;		 /**< Number of buffers of this size */
 	int size;		 /**< Size in bytes */
 	int low_mark;		 /**< Low water mark */
 	int high_mark;		 /**< High water mark */
-	drm_buf_flag flags;
+	enum {
+		_DRM_PAGE_ALIGN = 0x01,	/**< Align on page boundaries for DMA */
+		_DRM_AGP_BUFFER = 0x02,	/**< Buffer is in AGP space */
+		_DRM_SG_BUFFER = 0x04,	/**< Scatter/gather memory buffer */
+		_DRM_FB_BUFFER = 0x08,	/**< Buffer is in frame buffer */
+		_DRM_PCI_BUFFER_RO = 0x10 /**< Map PCI DMA buffer read-only */
+	} flags;
 	unsigned long agp_start; /**<
 				  * Start address of where the AGP buffers are
 				  * in the AGP aperture
@@ -414,7 +379,6 @@ struct drm_buf_map {
 	void *virtual;		/**< Mmap'd area in user-virtual */
 #endif
 	struct drm_buf_pub *list;	/**< Buffer information */
-	int fd;
 };
 
 /**
@@ -503,6 +467,8 @@ struct drm_irq_busid {
 enum drm_vblank_seq_type {
 	_DRM_VBLANK_ABSOLUTE = 0x0,	/**< Wait for specific vblank sequence number */
 	_DRM_VBLANK_RELATIVE = 0x1,	/**< Wait for given number of vblanks */
+	/* bits 1-6 are reserved for high crtcs */
+	_DRM_VBLANK_HIGH_CRTC_MASK = 0x0000003e,
 	_DRM_VBLANK_EVENT = 0x4000000,   /**< Send event instead of blocking */
 	_DRM_VBLANK_FLIP = 0x8000000,   /**< Scheduled buffer swap should flip */
 	_DRM_VBLANK_NEXTONMISS = 0x10000000,	/**< If missed, wait for next vblank */
@@ -510,7 +476,6 @@ enum drm_vblank_seq_type {
 	_DRM_VBLANK_SIGNAL = 0x40000000	/**< Send signal instead of blocking, unsupported */
 };
 #define _DRM_VBLANK_HIGH_CRTC_SHIFT 1
-#define	_DRM_VBLANK_HIGH_CRTC_MASK 0x0000003e
 
 #define _DRM_VBLANK_TYPES_MASK (_DRM_VBLANK_ABSOLUTE | _DRM_VBLANK_RELATIVE)
 #define _DRM_VBLANK_FLAGS_MASK (_DRM_VBLANK_EVENT | _DRM_VBLANK_SIGNAL | \
@@ -525,13 +490,8 @@ struct drm_wait_vblank_request {
 struct drm_wait_vblank_reply {
 	enum drm_vblank_seq_type type;
 	unsigned int sequence;
-#if defined(__sun)
-	time_t tval_sec;
-	suseconds_t tval_usec;
-#else
 	long tval_sec;
 	long tval_usec;
-#endif
 };
 
 /**
@@ -655,6 +615,15 @@ struct drm_gem_open {
 	__u64 size;
 };
 
+#define DRM_CAP_DUMB_BUFFER		0x1
+#define DRM_CAP_VBLANK_HIGH_CRTC	0x2
+#define DRM_CAP_DUMB_PREFERRED_DEPTH	0x3
+#define DRM_CAP_DUMB_PREFER_SHADOW	0x4
+#define DRM_CAP_PRIME			0x5
+#define  DRM_PRIME_CAP_IMPORT		0x1
+#define  DRM_PRIME_CAP_EXPORT		0x2
+#define DRM_CAP_TIMESTAMP_MONOTONIC	0x6
+#define DRM_CAP_ASYNC_PAGE_FLIP		0x7
 /*
  * The CURSOR_WIDTH and CURSOR_HEIGHT capabilities return a valid widthxheight
  * combination for the hardware cursor. The intention is that a hardware
@@ -686,17 +655,17 @@ struct drm_get_cap {
 /**
  * DRM_CLIENT_CAP_UNIVERSAL_PLANES
  *
- * if set to 1, the DRM core will expose the full universal plane list
- * (including primary and cursor planes).
+ * If set to 1, the DRM core will expose all planes (overlay, primary, and
+ * cursor) to userspace.
  */
-#define DRM_CLIENT_CAP_UNIVERSAL_PLANES 2
+#define DRM_CLIENT_CAP_UNIVERSAL_PLANES  2
 
 /**
  * DRM_CLIENT_CAP_ATOMIC
  *
- * If set to 1, the DRM core will allow atomic modesetting requests.
+ * If set to 1, the DRM core will expose atomic properties to userspace
  */
-#define DRM_CLIENT_CAP_ATOMIC		3
+#define DRM_CLIENT_CAP_ATOMIC	3
 
 /** DRM_IOCTL_SET_CLIENT_CAP ioctl argument type */
 struct drm_set_client_cap {
@@ -704,6 +673,7 @@ struct drm_set_client_cap {
 	__u64 value;
 };
 
+#define DRM_RDWR O_RDWR
 #define DRM_CLOEXEC O_CLOEXEC
 struct drm_prime_handle {
 	__u32 handle;
@@ -718,10 +688,10 @@ struct drm_prime_handle {
 #include "drm_mode.h"
 
 #define DRM_IOCTL_BASE			'd'
-#define DRM_IO(nr)			_IO(DRM_IOCTL_BASE, (nr))
-#define DRM_IOR(nr,type)		_IOR(DRM_IOCTL_BASE, (nr), type)
-#define DRM_IOW(nr,type)		_IOW(DRM_IOCTL_BASE, (nr), type)
-#define DRM_IOWR(nr,type)		_IOWR(DRM_IOCTL_BASE, (nr), type)
+#define DRM_IO(nr)			_IO(DRM_IOCTL_BASE,nr)
+#define DRM_IOR(nr,type)		_IOR(DRM_IOCTL_BASE,nr,type)
+#define DRM_IOW(nr,type)		_IOW(DRM_IOCTL_BASE,nr,type)
+#define DRM_IOWR(nr,type)		_IOWR(DRM_IOCTL_BASE,nr,type)
 
 #define DRM_IOCTL_VERSION		DRM_IOWR(0x00, struct drm_version)
 #define DRM_IOCTL_GET_UNIQUE		DRM_IOWR(0x01, struct drm_unique)
@@ -799,8 +769,8 @@ struct drm_prime_handle {
 #define DRM_IOCTL_MODE_SETGAMMA		DRM_IOWR(0xA5, struct drm_mode_crtc_lut)
 #define DRM_IOCTL_MODE_GETENCODER	DRM_IOWR(0xA6, struct drm_mode_get_encoder)
 #define DRM_IOCTL_MODE_GETCONNECTOR	DRM_IOWR(0xA7, struct drm_mode_get_connector)
-#define DRM_IOCTL_MODE_ATTACHMODE	DRM_IOWR(0xA8, struct drm_mode_mode_cmd)
-#define DRM_IOCTL_MODE_DETACHMODE	DRM_IOWR(0xA9, struct drm_mode_mode_cmd)
+#define DRM_IOCTL_MODE_ATTACHMODE	DRM_IOWR(0xA8, struct drm_mode_mode_cmd) /* deprecated (never worked) */
+#define DRM_IOCTL_MODE_DETACHMODE	DRM_IOWR(0xA9, struct drm_mode_mode_cmd) /* deprecated (never worked) */
 
 #define DRM_IOCTL_MODE_GETPROPERTY	DRM_IOWR(0xAA, struct drm_mode_get_property)
 #define DRM_IOCTL_MODE_SETPROPERTY	DRM_IOWR(0xAB, struct drm_mode_connector_set_property)
@@ -827,7 +797,7 @@ struct drm_prime_handle {
 
 /**
  * Device specific ioctls should only be in their respective headers
- * The device specific ioctl range is from 0x40 to 0x99.
+ * The device specific ioctl range is from 0x40 to 0x9f.
  * Generic IOCTLS restart at 0xA0.
  *
  * \sa drmCommandNone(), drmCommandRead(), drmCommandWrite(), and
@@ -859,28 +829,11 @@ struct drm_event {
 struct drm_event_vblank {
 	struct drm_event base;
 	__u64 user_data;
-#if defined(__sun)
-	time_t tv_sec;
-	suseconds_t tv_usec;
-#else
 	__u32 tv_sec;
 	__u32 tv_usec;
-#endif
 	__u32 sequence;
 	__u32 reserved;
 };
-
-#define DRM_CAP_DUMB_BUFFER 0x1
-#define DRM_CAP_VBLANK_HIGH_CRTC   0x2
-#define DRM_CAP_DUMB_PREFERRED_DEPTH 0x3
-#define DRM_CAP_DUMB_PREFER_SHADOW 0x4
-#define DRM_CAP_PRIME 0x5
-#define DRM_CAP_TIMESTAMP_MONOTONIC 0x6
-#define DRM_CAP_ASYNC_PAGE_FLIP 0x7
-#define DRM_CAP_ADDFB2_MODIFIERS	0x10
-
-#define DRM_PRIME_CAP_IMPORT 0x1
-#define DRM_PRIME_CAP_EXPORT 0x2
 
 /* typedef area */
 typedef struct drm_clip_rect drm_clip_rect_t;
@@ -925,4 +878,4 @@ typedef struct drm_agp_info drm_agp_info_t;
 typedef struct drm_scatter_gather drm_scatter_gather_t;
 typedef struct drm_set_version drm_set_version_t;
 
-#endif /* _DRM_H_ */
+#endif

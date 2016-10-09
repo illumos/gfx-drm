@@ -21,22 +21,25 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- */
-
 #ifndef DRM_FOURCC_H
 #define DRM_FOURCC_H
 
-#include <inttypes.h>
+#include "drm.h"
 
-#define fourcc_code(a,b,c,d) ((uint32_t)(a) | ((uint32_t)(b) << 8) | \
-			      ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
+#define fourcc_code(a, b, c, d) ((__u32)(a) | ((__u32)(b) << 8) | \
+				 ((__u32)(c) << 16) | ((__u32)(d) << 24))
 
-#define DRM_FORMAT_BIG_ENDIAN (1UL<<31) /* format is big endian instead of little endian */
+#define DRM_FORMAT_BIG_ENDIAN (1<<31) /* format is big endian instead of little endian */
 
 /* color index */
 #define DRM_FORMAT_C8		fourcc_code('C', '8', ' ', ' ') /* [7:0] C */
+
+/* 8 bpp Red */
+#define DRM_FORMAT_R8		fourcc_code('R', '8', ' ', ' ') /* [7:0] R */
+
+/* 16 bpp RG */
+#define DRM_FORMAT_RG88		fourcc_code('R', 'G', '8', '8') /* [15:0] R:G 8:8 little endian */
+#define DRM_FORMAT_GR88		fourcc_code('G', 'R', '8', '8') /* [15:0] G:R 8:8 little endian */
 
 /* 8 bpp RGB */
 #define DRM_FORMAT_RGB332	fourcc_code('R', 'G', 'B', '8') /* [7:0] R:G:B 3:3:2 */
@@ -222,7 +225,7 @@
  * - multiple of 128 pixels for the width
  * - multiple of  32 pixels for the height
  *
- * For more information: see http://linuxtv.org/downloads/v4l-dvb-apis/re32.html
+ * For more information: see https://linuxtv.org/downloads/v4l-dvb-apis/re32.html
  */
 #define DRM_FORMAT_MOD_SAMSUNG_64_32_TILE	fourcc_mod_code(SAMSUNG, 1)
 
