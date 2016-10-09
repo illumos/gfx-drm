@@ -35,6 +35,7 @@ set name=pkg.description \
 set name=pkg.summary value="DRM Kernel Drivers"
 set name=info.classification \
     value=org.opensolaris.category.2008:Drivers/Display
+set name=org.opensolaris.noincorp value=true
 set name=variant.arch value=i386
 dir path=kernel group=sys
 dir path=kernel/drv group=sys

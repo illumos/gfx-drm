@@ -34,6 +34,7 @@ set name=pkg.description value="AGP GART driver for x86 workstations"
 set name=pkg.summary value="AGP GART Driver"
 set name=info.classification \
     value=org.opensolaris.category.2008:Drivers/Display
+set name=org.opensolaris.noincorp value=true
 set name=variant.arch value=i386
 dir path=kernel group=sys
 dir path=kernel/drv group=sys
