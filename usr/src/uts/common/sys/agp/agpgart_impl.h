@@ -156,7 +156,6 @@ typedef struct	agpgart_softstate {
 	/* all registered agp device in here */
 	agp_registered_dev_t	asoft_devreg;
 	kstat_t			*asoft_ksp;
-	struct		list_head	mapped_list;
 } agpgart_softstate_t;
 
 typedef struct agpgart_ctx {

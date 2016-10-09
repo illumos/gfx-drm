@@ -30,8 +30,7 @@ LDFLAGS += -dy -Nmisc/busra
 #	Include common rules.
 #
 include $(UTSBASE)/intel/Makefile.intel
-
-CERRWARN	+= -_gcc=-Wno-uninitialized
+AGPTARGET_OBJS += agptarget.o
 
 #
 #	Define targets
@@ -60,6 +59,13 @@ modlintlib:	$(MODLINTLIB_DEPS)
 clean.lint:	$(CLEAN_LINT_DEPS)
 
 install:	$(INSTALL_DEPS)
+
+$(OBJS_DIR)/%.o:		$(UTSBASE)/intel/io/agpgart/%.c
+	$(COMPILE.c) -o $@ $<
+	$(CTFCONVERT_O)
+
+$(LINTS_DIR)/%.ln:		$(UTSBASE)/intel/io/agpgart/%.c
+	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
 #
 #	Include common targets.

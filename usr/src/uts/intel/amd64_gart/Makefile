@@ -4,8 +4,7 @@
 #
 # uts/intel/amd64_gart/Makefile
 #
-#
-#ident	"%Z%%M%	%I%	%E% SMI"
+
 #
 #	This makefile drives the framework of agp protocol
 #	(amd64_gart) kernel module.
@@ -27,6 +26,7 @@ ROOTMODULE	= $(ROOT_DRV_DIR)/$(MODULE)
 #	Include common rules.
 #
 include $(UTSBASE)/intel/Makefile.intel
+AMD64GART_OBJS += amd64_gart.o
 
 #
 #	Define targets
@@ -55,6 +55,13 @@ modlintlib:	$(MODLINTLIB_DEPS)
 clean.lint:	$(CLEAN_LINT_DEPS)
 
 install:	$(INSTALL_DEPS)
+
+$(OBJS_DIR)/%.o:		$(UTSBASE)/intel/io/agpgart/%.c
+	$(COMPILE.c) -o $@ $<
+	$(CTFCONVERT_O)
+
+$(LINTS_DIR)/%.ln:		$(UTSBASE)/intel/io/agpgart/%.c
+	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
 #
 #	Include common targets.

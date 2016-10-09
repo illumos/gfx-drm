@@ -24,7 +24,7 @@
 # Copyright 2007 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
 #
-# ident	"%Z%%M%	%I%	%E% SMI"
+
 #
 #	This makefile drives the production of the common graphics
 #	interface kernel module.
@@ -55,6 +55,7 @@ LDFLAGS	+=      -dy -Nmisc/pci_autoconfig
 #	Include common rules.
 #
 include $(UTSBASE)/intel/Makefile.intel
+AGP_OBJS += agpmaster.o
 
 #
 #	Define targets
@@ -90,6 +91,13 @@ modlintlib:	$(MODLINTLIB_DEPS)
 clean.lint:	$(CLEAN_LINT_DEPS)
 
 install:	$(INSTALL_DEPS)
+
+$(OBJS_DIR)/%.o:		$(UTSBASE)/intel/io/agpmaster/%.c
+	$(COMPILE.c) -o $@ $<
+	$(CTFCONVERT_O)
+
+$(LINTS_DIR)/%.ln:		$(UTSBASE)/intel/io/agpmaster/%.c
+	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
 #
 #	Include common targets.

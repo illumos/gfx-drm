@@ -48,16 +48,21 @@ extern "C" {
 #define	I810_SET_GTT_BASE	_IOW(AGPMASTERIOC_BASE, 12, uint32_t)
 #define	I8XX_ADD2GTT		_IOW(AGPMASTERIOC_BASE, 13, igd_gtt_seg_t)
 #define	I8XX_REM_GTT		_IOW(AGPMASTERIOC_BASE, 14, igd_gtt_seg_t)
+#define	I8XX_RW_GTT		_IOW(AGPMASTERIOC_BASE, 15, igd_gtt_seg_t)
 #define	I8XX_UNCONFIG		_IO(AGPMASTERIOC_BASE, 16)
 #define	AGP_MASTER_GETINFO	_IOR(AGPMASTERIOC_BASE, 20, agp_info_t)
 #define	AGP_MASTER_SETCMD	_IOW(AGPMASTERIOC_BASE, 21, uint32_t)
 
-/* used for IGD to bind/unbind gtt entries */
+/*
+ * used for IGD to bind/unbind gtt entries, and RW_GTT
+ */
 typedef struct igd_gtt_seg {
 	uint32_t	igs_pgstart;
 	uint32_t	igs_npage;
 	uint32_t	*igs_phyaddr; /* pointer to address array */
 	uint32_t	igs_type; /* reserved for other memory type */
+	uint32_t	igs_flags;
+	uint32_t	igs_scratch;
 } igd_gtt_seg_t;
 
 /* used for IGD to get info */

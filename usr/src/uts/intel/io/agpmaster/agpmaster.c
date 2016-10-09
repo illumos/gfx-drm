@@ -111,6 +111,8 @@ static int detect_i8xx_device(agp_master_softc_t *);
 static int detect_agp_devcice(agp_master_softc_t *, ddi_acc_handle_t);
 static int i8xx_add_to_gtt(gtt_impl_t *, igd_gtt_seg_t);
 static void i8xx_remove_from_gtt(gtt_impl_t *, igd_gtt_seg_t);
+static int i8xx_read_gtt(gtt_impl_t *, igd_gtt_seg_t);
+static int i8xx_write_gtt(gtt_impl_t *, igd_gtt_seg_t);
 
 int
 _init(void)
@@ -439,6 +441,7 @@ agpmaster_ioctl(dev_t dev, int cmd, intptr_t data, int mode, cred_t *cred,
 		    (void *)data, sizeof (int), mode))
 			return (EFAULT);
 		break;
+
 	case AGP_MASTER_SETCMD:
 		if (!(mode & FKIOCTL)) {
 			AGPM_DEBUG((CE_CONT, kernel_only, "AGP_MASTER_SETCMD"));
@@ -456,6 +459,7 @@ agpmaster_ioctl(dev_t dev, int cmd, intptr_t data, int mode, cred_t *cred,
 		    softc->agpm_data.agpm_acaptr + AGP_CONF_COMMAND,
 		    command);
 		break;
+
 	case AGP_MASTER_GETINFO:
 		if (!(mode & FKIOCTL)) {
 			AGPM_DEBUG((CE_CONT, kernel_only,
@@ -478,6 +482,7 @@ agpmaster_ioctl(dev_t dev, int cmd, intptr_t data, int mode, cred_t *cred,
 		    sizeof (agp_info_t), mode))
 			return (EFAULT);
 		break;
+
 	case I810_SET_GTT_BASE:
 		if (!(mode & FKIOCTL)) {
 			AGPM_DEBUG((CE_CONT, kernel_only, "I810_SET_GTT_ADDR"));
@@ -494,6 +499,7 @@ agpmaster_ioctl(dev_t dev, int cmd, intptr_t data, int mode, cred_t *cred,
 
 		AGPM_WRITE(softc, PGTBL_CTL, addr);
 		break;
+
 	case I8XX_GET_INFO:
 		if (!(mode & FKIOCTL)) {
 			AGPM_DEBUG((CE_CONT, kernel_only, "I8XX_GET_INFO"));
@@ -506,6 +512,7 @@ agpmaster_ioctl(dev_t dev, int cmd, intptr_t data, int mode, cred_t *cred,
 		    (void *)data, sizeof (igd_info_t), mode))
 			return (EFAULT);
 		break;
+
 	case I8XX_ADD2GTT:
 		if (!(mode & FKIOCTL)) {
 			AGPM_DEBUG((CE_CONT, kernel_only, "I8XX_ADD2GTT"));
@@ -521,6 +528,7 @@ agpmaster_ioctl(dev_t dev, int cmd, intptr_t data, int mode, cred_t *cred,
 		if (i8xx_add_to_gtt(&softc->agpm_data.agpm_gtt, seg))
 			return (EINVAL);
 		break;
+
 	case I8XX_REM_GTT:
 		if (!(mode & FKIOCTL)) {
 			AGPM_DEBUG((CE_CONT, kernel_only, "I8XX_REM_GTT"));
@@ -535,6 +543,33 @@ agpmaster_ioctl(dev_t dev, int cmd, intptr_t data, int mode, cred_t *cred,
 
 		i8xx_remove_from_gtt(&softc->agpm_data.agpm_gtt, seg);
 		break;
+
+	case I8XX_RW_GTT:
+		if (!(mode & FKIOCTL)) {
+			AGPM_DEBUG((CE_CONT, kernel_only, "I8XX_RW_GTT"));
+			return (ENXIO);
+		}
+
+		CONFIRM(IS_IGD(softc));
+
+		if (ddi_copyin((void *)data, &seg,
+		    sizeof (igd_gtt_seg_t), mode))
+			return (EFAULT);
+
+		/*
+		 * Read or write based on flags set in
+		 * ioctl_agpgart_rw_gtt()
+		 * Used to save/restore GTT state.
+		 */
+		if (seg.igs_flags == 0) {
+			if (i8xx_read_gtt(&softc->agpm_data.agpm_gtt, seg))
+				return (EINVAL);
+		} else {
+			if (i8xx_write_gtt(&softc->agpm_data.agpm_gtt, seg))
+				return (EINVAL);
+		}
+		break;
+
 	case I8XX_UNCONFIG:
 		if (!(mode & FKIOCTL)) {
 			AGPM_DEBUG((CE_CONT, kernel_only, "I8XX_UNCONFIG"));
@@ -629,9 +664,16 @@ detect_i8xx_device(agp_master_softc_t *master_softc)
 	case INTEL_IGD_IGDNG_D:
 	case INTEL_IGD_IGDNG_M:
 	case INTEL_IGD_B43:
+		/*
+		 * Note: This module is not used for Intel Gen6 or later
+		 * devices (Sandy Bridge etc.) so no need to add any
+		 * PCI IDs here for those devices.
+		 */
 		master_softc->agpm_dev_type = DEVICE_IS_I830;
 		break;
 	default:		/* unknown id */
+		AGPM_DEBUG((CE_CONT, "unknown i8xx_device 0x%x",
+		    master_softc->agpm_id));
 		return (-1);
 	}
 
@@ -674,6 +716,7 @@ phys2entry(uint32_t type, uint32_t physaddr, uint32_t *entry)
 		value = (physaddr & GTT_PTE_MASK) | GTT_PTE_VALID;
 		break;
 	default:
+		AGPM_DEBUG((CE_WARN, "phys2entry type %d", type));
 		return (-1);
 	}
 
@@ -693,12 +736,14 @@ i8xx_add_to_gtt(gtt_impl_t *gtt, igd_gtt_seg_t seg)
 	maxpages = gtt->gtt_info.igd_apersize;
 	maxpages = GTT_MB_TO_PAGES(maxpages);
 
-	paddr = seg.igs_phyaddr;
-
 	/* check if gtt max page number is reached */
 	if ((seg.igs_pgstart + seg.igs_npage) > maxpages)
 		return (-1);
 
+	/*
+	 * Note: Caller supplies a gtt address from which we
+	 * extract a uint32_t gtt_pte_t to set in the GTT.
+	 */
 	paddr = seg.igs_phyaddr;
 	for (i = seg.igs_pgstart; i < (seg.igs_pgstart + seg.igs_npage);
 	    i++, paddr++) {
@@ -717,9 +762,19 @@ i8xx_remove_from_gtt(gtt_impl_t *gtt, igd_gtt_seg_t seg)
 {
 	int i;
 	uint32_t maxpages;
+	uint32_t entry;
 
 	maxpages = gtt->gtt_info.igd_apersize;
 	maxpages = GTT_MB_TO_PAGES(maxpages);
+
+	/*
+	 * If non-zero, seg.igs_scratch is the pfn_t for a
+	 * "scratch" page to use instead of zero.
+	 */
+	if (seg.igs_scratch == 0 ||
+	    phys2entry(seg.igs_type, seg.igs_scratch, &entry) != 0) {
+		entry = 0;
+	}
 
 	/* check if gtt max page number is reached */
 	if ((seg.igs_pgstart + seg.igs_npage) > maxpages)
@@ -727,6 +782,72 @@ i8xx_remove_from_gtt(gtt_impl_t *gtt, igd_gtt_seg_t seg)
 
 	for (i = seg.igs_pgstart; i < (seg.igs_pgstart + seg.igs_npage); i++) {
 		ddi_put32(gtt->gtt_handle,
-		    (uint32_t *)(gtt->gtt_addr + i * sizeof (uint32_t)), 0);
+		    (uint32_t *)(gtt->gtt_addr + i * sizeof (uint32_t)),
+		    entry);
 	}
+}
+
+/*
+ * Low-level read GTT
+ */
+static int
+i8xx_read_gtt(gtt_impl_t *gtt, igd_gtt_seg_t seg)
+{
+	int i;
+	uint32_t *paddr;
+	uint32_t maxpages;
+
+	maxpages = gtt->gtt_info.igd_apersize;
+	maxpages = GTT_MB_TO_PAGES(maxpages);
+
+	/* Buffer into which we'll read. */
+	paddr = seg.igs_phyaddr;
+	if (paddr == NULL)
+		return (-1);
+
+	/* check if gtt max page number is reached */
+	if ((seg.igs_pgstart + seg.igs_npage) > maxpages)
+		return (-1);
+
+	paddr = seg.igs_phyaddr;
+	for (i = seg.igs_pgstart; i < (seg.igs_pgstart + seg.igs_npage);
+	    i++, paddr++) {
+		*paddr = ddi_get32(gtt->gtt_handle,
+		    (uint32_t *)(gtt->gtt_addr + i * sizeof (uint32_t)));
+	}
+
+	return (0);
+}
+
+/*
+ * Low-level write GTT
+ */
+static int
+i8xx_write_gtt(gtt_impl_t *gtt, igd_gtt_seg_t seg)
+{
+	int i;
+	uint32_t *paddr;
+	uint32_t maxpages;
+
+	maxpages = gtt->gtt_info.igd_apersize;
+	maxpages = GTT_MB_TO_PAGES(maxpages);
+
+	/* Buffer from which we'll write. */
+	paddr = seg.igs_phyaddr;
+	if (paddr == NULL)
+		return (-1);
+
+	/* check if gtt max page number is reached */
+	if ((seg.igs_pgstart + seg.igs_npage) > maxpages)
+		return (-1);
+
+	paddr = seg.igs_phyaddr;
+	for (i = seg.igs_pgstart; i < (seg.igs_pgstart + seg.igs_npage);
+	    i++, paddr++) {
+		ddi_put32(gtt->gtt_handle,
+		    (uint32_t *)(gtt->gtt_addr + i * sizeof (uint32_t)),
+		    *paddr);
+	}
+
+	return (0);
 }

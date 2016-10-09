@@ -187,14 +187,16 @@ extern "C" {
 #define	INTEL_IGD_B43			0x2e428086
 
 /* Intel 915 and 945 series */
-#define	IS_INTEL_915(device) ((device == INTEL_IGD_915) ||	\
+#define	IS_INTEL_915(device) ( \
+	(device == INTEL_IGD_915) ||	\
 	(device == INTEL_IGD_915GM) ||	\
 	(device == INTEL_IGD_945) ||	\
 	(device == INTEL_IGD_945GM) ||	\
 	(device == INTEL_IGD_945GME))
 
 /* Intel 965 series */
-#define	IS_INTEL_965(device) ((device == INTEL_IGD_946GZ) ||	\
+#define	IS_INTEL_965(device) ( \
+	(device == INTEL_IGD_946GZ) ||	\
 	(device == INTEL_IGD_965G1) ||	\
 	(device == INTEL_IGD_965Q) ||	\
 	(device == INTEL_IGD_965G2) ||	\
@@ -204,20 +206,23 @@ extern "C" {
 	IS_INTEL_G4X(device))
 
 /* Intel G33 series */
-#define	IS_INTEL_X33(device) ((device == INTEL_IGD_Q35) ||	\
+#define	IS_INTEL_X33(device) ( \
+	(device == INTEL_IGD_Q35) ||	\
 	(device == INTEL_IGD_G33) ||	\
 	(device == INTEL_IGD_Q33))
 
 /* IGDNG */
-#define	IS_IGDNG(device)	((device == INTEL_IGD_IGDNG_D) ||	\
-			(device == INTEL_IGD_IGDNG_M))
+#define	IS_INTEL_IGDNG(device) ( \
+	(device == INTEL_IGD_IGDNG_D) ||	\
+	(device == INTEL_IGD_IGDNG_M))
 
 /* Intel G4X series */
-#define	IS_INTEL_G4X(device) ((device == INTEL_IGD_EL) ||	\
+#define	IS_INTEL_G4X(device) ( \
+	(device == INTEL_IGD_EL) ||	\
 	(device == INTEL_IGD_Q45) ||	\
 	(device == INTEL_IGD_G45) ||	\
 	(device == INTEL_IGD_G41) ||	\
-	IS_IGDNG(device) ||	\
+	IS_INTEL_IGDNG(device) ||	\
 	(device == INTEL_IGD_B43))
 
 /* register offsets in PCI config space */

@@ -64,52 +64,6 @@ static void *agpgart_glob_soft_handle;
 #define	IS_TRUE_AGP(type)	(((type) == ARC_INTELAGP) || \
 	((type) == ARC_AMD64AGP))
 
-#define	AGP_HASH_NODE	1024
-
-static void
-list_head_init(struct list_head  *head) {
-	struct	list_head	*entry,	*tmp;
-	/* HASH for accelerate */
-	entry = kmem_zalloc(AGP_HASH_NODE *
-		sizeof (struct list_head), KM_SLEEP);
-	head->next = entry;
-	for (int i = 0; i < AGP_HASH_NODE; i++) {
-	tmp = &entry[i];
-	tmp->next = tmp;
-	tmp->prev = tmp;
-	tmp->gttseg = NULL;
-	}
-}
-
-static void
-list_head_add_new(struct list_head	*head,
-		igd_gtt_seg_t	*gttseg)
-{
-	struct list_head  *entry, *tmp;
-	int key;
-	entry = kmem_zalloc(sizeof (*entry), KM_SLEEP);
-	key = gttseg->igs_pgstart % AGP_HASH_NODE;
-	tmp = &head->next[key];
-	tmp->next->prev = entry;
-	entry->next = tmp->next;
-	entry->prev = tmp;
-	tmp->next = entry;
-	entry->gttseg = gttseg;
-}
-
-static void
-list_head_del(struct list_head	*entry) {
-	(entry)->next->prev = (entry)->prev;      \
-	(entry)->prev->next = (entry)->next;      \
-	(entry)->gttseg = NULL; \
-}
-
-#define	list_head_for_each_safe(entry,	temp,	head)	\
-	for (int key = 0; key < AGP_HASH_NODE; key++)	\
-	for (entry = (&(head)->next[key])->next, temp = (entry)->next;	\
-		entry != &(head)->next[key];	\
-		entry = temp, temp = temp->next)
-
 
 #define	agpinfo_default_to_32(v, v32)	\
 	{	\
@@ -1472,6 +1426,9 @@ agp_unbind_key(agpgart_softstate_t *softstate, keytable_ent_t *entryp)
 		lyr_flush_gart_cache(&softstate->asoft_devreg);
 
 		break;
+	default:
+		/* Never happens, but avoid gcc switch warning. */
+		return (EIO);
 	}
 
 	entryp->kte_bound = 0;
@@ -2494,8 +2451,6 @@ agpgart_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 	    AGP_MAXKEYS * (sizeof (keytable_ent_t)),
 	    KM_SLEEP);
 
-	list_head_init(&softstate->mapped_list);
-
 	return (DDI_SUCCESS);
 err4:
 	agp_fini_kstats(softstate);
@@ -2541,21 +2496,6 @@ agpgart_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 		    AGP_MAXKEYS * (sizeof (keytable_ent_t)));
 		st->asoft_table = 0;
 	}
-
-	struct list_head	*entry,	*temp,	*head;
-	igd_gtt_seg_t	*gttseg;
-	list_head_for_each_safe(entry, temp, &st->mapped_list) {
-		gttseg = entry->gttseg;
-		list_head_del(entry);
-		kmem_free(entry, sizeof (*entry));
-		kmem_free(gttseg->igs_phyaddr,
-		    sizeof (uint32_t) * gttseg->igs_npage);
-		kmem_free(gttseg, sizeof (igd_gtt_seg_t));
-	}
-	head = &st->mapped_list;
-	kmem_free(head->next,
-	    AGP_HASH_NODE * sizeof (struct list_head));
-	head->next = NULL;
 
 	ddi_remove_minor_node(dip, AGPGART_DEVNODE);
 	agp_fini_kstats(st);
@@ -3144,122 +3084,124 @@ ioctl_agpgart_flush_chipset(agpgart_softstate_t *st)
 static int
 ioctl_agpgart_pages_bind(agpgart_softstate_t  *st, void  *arg, int flags)
 {
-	agp_bind_pages_t 	bind_info;
-	uint32_t	pg_offset;
-	int err = 0;
-	ldi_handle_t hdl;
-	uint32_t npages;
-	igd_gtt_seg_t *gttseg;
-	uint32_t i;
-	int rval;
-	if (ddi_copyin(arg, &bind_info,
-	    sizeof (agp_bind_pages_t), flags) != 0) {
+	agp_bind_pages_t bind_info;
+	igd_gtt_seg_t	gttseg;
+	size_t		array_size;
+	ulong_t		paddr;
+	uint32_t	igs_type;
+	ldi_handle_t	hdl;
+	int		i, rval;
+	int		rc = 0;
+
+	if (ddi_copyin(arg, &bind_info, sizeof (bind_info), flags) != 0) {
 		return (EFAULT);
 	}
 
-	gttseg = (igd_gtt_seg_t *)kmem_zalloc(sizeof (igd_gtt_seg_t),
-	    KM_SLEEP);
-
-	pg_offset = bind_info.agpb_pgstart;
-
-	gttseg->igs_pgstart =  pg_offset;
-	npages = (uint32_t)bind_info.agpb_pgcount;
-	gttseg->igs_npage = npages;
-
-	gttseg->igs_type = AGP_NORMAL;
-	gttseg->igs_phyaddr = (uint32_t *)kmem_zalloc
-	    (sizeof (uint32_t) * gttseg->igs_npage, KM_SLEEP);
-
-	for (i = 0; i < npages; i++) {
-		gttseg->igs_phyaddr[i] = bind_info.agpb_pages[i] <<
-		    GTT_PAGE_SHIFT;
+	/*
+	 * Convert agp_type to something the igs layer understands.
+	 */
+	switch (bind_info.agpb_type) {
+	case AGP_USER_MEMORY:
+	case AGP_USER_CACHED_MEMORY:	/* Todo */
+		igs_type = AGP_NORMAL;
+		break;
+	default:
+		return (EINVAL);
 	}
 
+	if (bind_info.agpb_pgcount == 0)
+		return (0);
+
+	gttseg.igs_pgstart = bind_info.agpb_pgstart;
+	gttseg.igs_npage   = bind_info.agpb_pgcount;
+
+	array_size = bind_info.agpb_pgcount * sizeof (uint32_t);
+	gttseg.igs_phyaddr = kmem_zalloc(array_size, KM_SLEEP);
+	if (bind_info.agpb_pages != NULL) {
+		for (i = 0; i < bind_info.agpb_pgcount; i++) {
+			paddr = bind_info.agpb_pages[i] << GTT_PAGE_SHIFT;
+			gttseg.igs_phyaddr[i] = (uint32_t)paddr;
+		}
+	}
+
+	gttseg.igs_type    = igs_type;
+	gttseg.igs_flags   = 0; /* not used */
+	gttseg.igs_scratch = 0; /* not used */
+
+	/* See i8xx_add_to_gtt */
 	hdl = st->asoft_devreg.agprd_masterhdl;
-	if (ldi_ioctl(hdl, I8XX_ADD2GTT, (intptr_t)gttseg, FKIOCTL,
+	if (ldi_ioctl(hdl, I8XX_ADD2GTT, (intptr_t)&gttseg, FKIOCTL,
 	    kcred, &rval)) {
-		AGPDB_PRINT2((CE_WARN, "ioctl_agpgart_pages_bind: start0x%x",
-		    gttseg->igs_pgstart));
-		AGPDB_PRINT2((CE_WARN, "ioctl_agpgart_pages_bind: pages=0x%x",
-		    gttseg->igs_npage));
-		AGPDB_PRINT2((CE_WARN, "ioctl_agpgart_pages_bind: type=0x%x",
-		    gttseg->igs_type));
-		err = -1;
+		rc = -1;
 	}
 
-	list_head_add_new(&st->mapped_list, gttseg);
-	return (err);
+	kmem_free(gttseg.igs_phyaddr, array_size);
+
+	return (rc);
 }
 
 static int
 ioctl_agpgart_pages_unbind(agpgart_softstate_t  *st, void  *arg, int flags)
 {
 	agp_unbind_pages_t unbind_info;
-	int	rval;
+	igd_gtt_seg_t	gttseg;
 	ldi_handle_t	hdl;
-	igd_gtt_seg_t	*gttseg;
+	int	rval;
 
 	if (ddi_copyin(arg, &unbind_info, sizeof (unbind_info), flags) != 0) {
 		return (EFAULT);
 	}
 
-	struct list_head  *entry, *temp;
-	list_head_for_each_safe(entry, temp, &st->mapped_list) {
-		if (entry->gttseg->igs_pgstart == unbind_info.agpb_pgstart) {
-			gttseg = entry->gttseg;
-			/* not unbind if VT switch */
-			if (unbind_info.agpb_type) {
-				list_head_del(entry);
-				kmem_free(entry, sizeof (*entry));
-			}
-			break;
-		}
-	}
-	ASSERT(gttseg != NULL);
-	gttseg->igs_pgstart =  unbind_info.agpb_pgstart;
-	ASSERT(gttseg->igs_npage == unbind_info.agpb_pgcount);
+	gttseg.igs_pgstart = unbind_info.agpu_pgstart;
+	gttseg.igs_npage   = unbind_info.agpu_pgcount;
+	gttseg.igs_phyaddr = NULL; /* not used */
+	gttseg.igs_type    = AGP_NORMAL;
+	gttseg.igs_flags   = unbind_info.agpu_flags;
+	gttseg.igs_scratch = (uint32_t) unbind_info.agpu_scratch;
 
+	/* See i8xx_remove_from_gtt */
 	hdl = st->asoft_devreg.agprd_masterhdl;
-	if (ldi_ioctl(hdl, I8XX_REM_GTT, (intptr_t)gttseg, FKIOCTL,
+	if (ldi_ioctl(hdl, I8XX_REM_GTT, (intptr_t)&gttseg, FKIOCTL,
 	    kcred, &rval))
 		return (-1);
-
-	if (unbind_info.agpb_type) {
-		kmem_free(gttseg->igs_phyaddr, sizeof (uint32_t) *
-		    gttseg->igs_npage);
-		kmem_free(gttseg, sizeof (igd_gtt_seg_t));
-	}
 
 	return (0);
 }
 
+/*
+ * Read or write GTT registers.  In the DRM code, see:
+ * i915_gem_gtt.c:intel_rw_gtt
+ *
+ * Used to save/restore GTT state.
+ */
 static int
-ioctl_agpgart_pages_rebind(agpgart_softstate_t  *st)
+ioctl_agpgart_rw_gtt(agpgart_softstate_t  *st, void  *arg, int flags)
 {
-	int	rval;
+	agp_rw_gtt_t	rw_info;
+	igd_gtt_seg_t	gttseg;
 	ldi_handle_t	hdl;
-	igd_gtt_seg_t	*gttseg;
-	int err = 0;
+	int rval;
 
-	hdl = st->asoft_devreg.agprd_masterhdl;
-	struct list_head  *entry, *temp;
-	list_head_for_each_safe(entry, temp, &st->mapped_list) {
-		gttseg = entry->gttseg;
-		list_head_del(entry);
-		kmem_free(entry, sizeof (*entry));
-		if (ldi_ioctl(hdl, I8XX_ADD2GTT, (intptr_t)gttseg, FKIOCTL,
-		    kcred, &rval)) {
-			AGPDB_PRINT2((CE_WARN, "agpgart_pages_rebind errori"));
-			err = -1;
-			break;
-		}
-		kmem_free(gttseg->igs_phyaddr, sizeof (uint32_t) *
-		    gttseg->igs_npage);
-		kmem_free(gttseg, sizeof (igd_gtt_seg_t));
-
+	if (ddi_copyin(arg, &rw_info, sizeof (rw_info), flags) != 0) {
+		return (EFAULT);
 	}
-	return (err);
 
+	gttseg.igs_pgstart = rw_info.agprw_pgstart;
+	gttseg.igs_npage   = rw_info.agprw_pgcount;
+	gttseg.igs_phyaddr = rw_info.agprw_addr;
+	gttseg.igs_type    = 0; /* not used */
+	gttseg.igs_flags   = rw_info.agprw_flags;
+	gttseg.igs_scratch = 0; /* not used */
+
+	/* See: i8xx_read_gtt, i8xx_write_gtt */
+	hdl = st->asoft_devreg.agprd_masterhdl;
+	if (ldi_ioctl(hdl, I8XX_RW_GTT, (intptr_t)&gttseg, FKIOCTL,
+	    kcred, &rval)) {
+		AGPDB_PRINT2((CE_WARN, "agpgart_rw_gtt error"));
+		return (-1);
+	}
+
+	return (0);
 }
 
 /*ARGSUSED*/
@@ -3316,9 +3258,10 @@ agpgart_ioctl(dev_t dev, int cmd, intptr_t intarg, int flags,
 	case AGPIOC_PAGES_UNBIND:
 		retval = ioctl_agpgart_pages_unbind(softstate, arg, flags);
 		break;
-	case AGPIOC_PAGES_REBIND:
-		retval = ioctl_agpgart_pages_rebind(softstate);
+	case AGPIOC_RW_GTT:
+		retval = ioctl_agpgart_rw_gtt(softstate, arg, flags);
 		break;
+
 	default:
 		AGPDB_PRINT2((CE_WARN, "agpgart_ioctl: wrong argument"));
 		retval = ENXIO;

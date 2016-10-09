@@ -34,7 +34,15 @@ FILEMODE=644
 #		unix_bb_info.h:		Private interface to kcov
 #
 
-i386_HDRS=
+i386_HDRS=			\
+	agp/agpamd64gart_io.h	\
+	agp/agpdefs.h		\
+	agp/agpgart_impl.h	\
+	agp/agpmaster_io.h	\
+	agp/agptarget_io.h	\
+	agpgart.h		\
+	gfx_private.h
+
 sparc_HDRS=
 
 # Generated headers
@@ -49,7 +57,7 @@ HDRS=	$(GENHDRS) $(CHKHDRS)
 # from Makefile.syshdrs
 ROOTDIR=	$(ROOT)/usr/include/sys
 sparc_ROOTDIRS=
-i386_ROOTDIRS=
+i386_ROOTDIRS=	$(ROOTDIR)/agp
 sparc_ROOTHDRS=
 i386_ROOTHDRS=
 
@@ -61,7 +69,13 @@ ROOTHDRS=				\
 	$($(MACH)_HDRS:%=$(ROOTDIR)/%)	\
 	$(HDRS:%=$(ROOTDIR)/%)
 
+agp/%.check:	agp/%.h
+	$(DOT_H_CHECK)
+
 $(ROOTDIR)/%: %
+	$(INS.file)
+
+$(ROOTDIR)/agp/%:		agp/%
 	$(INS.file)
 
 $(ROOTDIRS):
