@@ -1,7 +1,7 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
- * Use is subject to license terms.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  */
+
 /*
  * ati_pcigart.h -- ATI PCI GART support -*- linux-c -*-
  * Created: Wed Dec 13 21:52:19 2000 by gareth@valinux.com
@@ -39,6 +39,23 @@
 #define	ATI_PCIGART_PAGE_SIZE		4096	/* PCI GART page size */
 #define	ATI_MAX_PCIGART_PAGES		8192	/* 32 MB aperture, 4K pages */
 #define	ATI_PCIGART_TABLE_SIZE		32768
+
+int
+/* LINTED */
+drm_ati_pcigart_cleanup(drm_device_t *dev, drm_ati_pcigart_info *gart_info)
+{
+	drm_dma_handle_t	*dmah;
+
+	if (dev->sg == NULL) {
+		DRM_ERROR("no scatter/gather memory!\n");
+		return (0);
+	}
+	dmah = dev->sg->dmah_gart;
+	dev->sg->dmah_gart = NULL;
+	if (dmah)
+		drm_pci_free(dmah);
+	return (1);
+}
 
 int
 drm_ati_pcigart_init(drm_device_t *dev, drm_ati_pcigart_info *gart_info)
@@ -107,22 +124,5 @@ out:
 		    entry->dmah_gart->real_sz, DDI_DMA_SYNC_FORDEV);
 	}
 
-	return (1);
-}
-
-/*ARGSUSED*/
-extern int
-drm_ati_pcigart_cleanup(drm_device_t *dev, drm_ati_pcigart_info *gart_info)
-{
-	drm_dma_handle_t	*dmah;
-
-	if (dev->sg == NULL) {
-		DRM_ERROR("no scatter/gather memory!\n");
-		return (0);
-	}
-	dmah = dev->sg->dmah_gart;
-	dev->sg->dmah_gart = NULL;
-	if (dmah)
-		drm_pci_free(dev, dmah);
 	return (1);
 }

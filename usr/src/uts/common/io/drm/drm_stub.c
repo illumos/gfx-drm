@@ -353,6 +353,7 @@ static int drm_get_minor(struct drm_device *dev, struct drm_minor **minor, int t
 
 
 err_g2:
+err_mem:
 	kfree(new_minor, sizeof (*new_minor));
 err_idr:
 	(void) idr_remove(&drm_minors_idr, minor_id);
@@ -488,6 +489,8 @@ void drm_put_dev(struct drm_device *dev)
 
 	if (dev->driver->unload)
 		dev->driver->unload(dev);
+
+	gfxp_mempool_destroy();
 
 	if (drm_core_has_AGP(dev) && dev->agp) {
 		drm_agp_cleanup(dev);

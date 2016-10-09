@@ -1,7 +1,10 @@
 /*
- *
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ */
+
+/*
  * Copyright(c) 2006-2007 Tungsten Graphics, Inc., Cedar Park, TX., USA
- * Copyright (c) 2009, Intel Corporation.
+ * Copyright (c) 2009, 2012, Intel Corporation.
  * All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -27,10 +30,6 @@
  */
 /*
  * Authors: Thomas HellstrÃ¶m <thomas-at-tungstengraphics-dot-com>
- */
-
-/*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
 #include <sys/x86_archext.h>

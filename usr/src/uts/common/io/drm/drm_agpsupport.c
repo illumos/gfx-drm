@@ -1,16 +1,19 @@
 /*
- * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
- * Use is subject to license terms.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ */
+
+/**
+ * \file drm_agpsupport.c
+ * DRM support for AGP/GART backend
+ *
+ * \author Rickard E. (Rik) Faith <faith@valinux.com>
+ * \author Gareth Hughes <gareth@valinux.com>
  */
 
 /*
- * drm_agpsupport.h -- DRM support for AGP/GART backend -*- linux-c -*-
- * Created: Mon Dec 13 09:56:45 1999 by faith@precisioninsight.com
- */
-/*
  * Copyright 1999 Precision Insight, Inc., Cedar Park, Texas.
  * Copyright 2000 VA Linux Systems, Inc., Sunnyvale, California.
- * Copyright (c) 2009, Intel Corporation.
+ * Copyright (c) 2009, 2013, Intel Corporation.
  * All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -31,11 +34,6 @@
  * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
- *
- * Author:
- *    Rickard E. (Rik) Faith <faith@valinux.com>
- *    Gareth Hughes <gareth@valinux.com>
- *
  */
 
 #include "drm.h"
@@ -55,449 +53,495 @@
  */
 #define	DRM_AGP_KEY_OFFSET	8
 
-extern int drm_supp_device_capability(void *handle, int capid);
-
-/*ARGSUSED*/
-int
-drm_device_is_agp(drm_device_t *dev)
+void drm_agp_cleanup(struct drm_device *dev)
 {
-	int ret;
+	struct drm_agp_head *agp = dev->agp;
 
-	if (dev->driver->device_is_agp != NULL) {
-		/*
-		 * device_is_agp returns a tristate:
-		 * 	0 = not AGP;
-		 * 	1 = definitely AGP;
-		 * 	2 = fall back to PCI capability
-		 */
-		ret = (*dev->driver->device_is_agp)(dev);
-		if (ret != DRM_MIGHT_BE_AGP)
-			return (ret);
-	}
-
-	return (drm_supp_device_capability(dev->drm_handle, PCIY_AGP));
-
+	(void) ldi_close(agp->agpgart_lh, FEXCL, kcred);
+	ldi_ident_release(agp->agpgart_li);
 }
 
-/*ARGSUSED*/
-int
-drm_device_is_pcie(drm_device_t *dev)
+/**
+ * Get AGP information.
+ *
+ * \param inode device inode.
+ * \param file_priv DRM file private.
+ * \param cmd command.
+ * \param arg pointer to a (output) drm_agp_info structure.
+ * \return zero on success or a negative number on failure.
+ *
+ * Verifies the AGP device has been initialized and acquired and fills in the
+ * drm_agp_info structure with the information in drm_agp_head::agp_info.
+ */
+int drm_agp_info(struct drm_device *dev, struct drm_agp_info *info)
 {
-	return (drm_supp_device_capability(dev->drm_handle, PCIY_EXPRESS));
-}
-
-
-/*ARGSUSED*/
-int
-drm_agp_info(DRM_IOCTL_ARGS)
-{
-	DRM_DEVICE;
-	agp_info_t		*agpinfo;
-	drm_agp_info_t		info;
+	agp_info_t *agpinfo;
 
 	if (!dev->agp || !dev->agp->acquired)
-		return (EINVAL);
+		return -EINVAL;
 
 	agpinfo = &dev->agp->agp_info;
-	info.agp_version_major	= agpinfo->agpi_version.agpv_major;
-	info.agp_version_minor	= agpinfo->agpi_version.agpv_minor;
-	info.mode		= agpinfo->agpi_mode;
-	info.aperture_base	= agpinfo->agpi_aperbase;
-	info.aperture_size	= agpinfo->agpi_apersize* 1024 * 1024;
-	info.memory_allowed	= agpinfo->agpi_pgtotal << PAGE_SHIFT;
-	info.memory_used	= agpinfo->agpi_pgused << PAGE_SHIFT;
-	info.id_vendor		= agpinfo->agpi_devid & 0xffff;
-	info.id_device		= agpinfo->agpi_devid >> 16;
+	info->agp_version_major = agpinfo->agpi_version.agpv_major;
+	info->agp_version_minor = agpinfo->agpi_version.agpv_minor;
+	info->mode = agpinfo->agpi_mode;
+	info->aperture_base = agpinfo->agpi_aperbase;
+	info->aperture_size = agpinfo->agpi_apersize * 1024 * 1024;
+	info->memory_allowed = agpinfo->agpi_pgtotal << PAGE_SHIFT;
+	info->memory_used = agpinfo->agpi_pgused << PAGE_SHIFT;
+	info->id_vendor = agpinfo->agpi_devid & 0xffff;
+	info->id_device = agpinfo->agpi_devid >> 16;
 
-	DRM_COPYTO_WITH_RETURN((void *)data, &info, sizeof (info));
-	return (0);
+	return 0;
 }
 
-/*ARGSUSED*/
-int
-drm_agp_acquire(DRM_IOCTL_ARGS)
+/* LINTED */
+int drm_agp_info_ioctl(DRM_IOCTL_ARGS)
 {
-	DRM_DEVICE;
-	int	ret, rval;
+	struct drm_agp_info *info = data;
+	int err;
 
-	if (!dev->agp) {
-		DRM_ERROR("drm_agp_acquire : agp isn't initialized yet");
-		return (ENODEV);
-	}
-	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_ACQUIRE,
-	    (uintptr_t)0, FKIOCTL, kcred, &rval);
-	if (ret) {
-		DRM_ERROR("drm_agp_acquired: AGPIOC_ACQUIRE failed\n");
-		return (EIO);
+	err = drm_agp_info(dev, info);
+	if (err)
+		return err;
+
+	return 0;
+}
+
+/**
+ * Acquire the AGP device.
+ *
+ * \param dev DRM device that is to acquire AGP.
+ * \return zero on success or a negative number on failure.
+ *
+ * Verifies the AGP device hasn't been acquired before and calls
+ * \c agp_backend_acquire.
+ */
+int drm_agp_acquire(struct drm_device * dev)
+{
+	if (!dev->agp)
+		return -ENODEV;
+	if (dev->agp->acquired)
+		return -EBUSY;
+	{
+		int ret, rval;
+		if (ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_ACQUIRE,
+		    (uintptr_t)0, FKIOCTL, kcred, &rval)) {
+			DRM_ERROR("AGPIOC_ACQUIRE failed");
+			return -ret;
+		}
 	}
 	dev->agp->acquired = 1;
-
-	return (0);
+	return 0;
 }
 
-/*ARGSUSED*/
-int
-drm_agp_release(DRM_IOCTL_ARGS)
+/**
+ * Acquire the AGP device (ioctl).
+ *
+ * \param inode device inode.
+ * \param file_priv DRM file private.
+ * \param cmd command.
+ * \param arg user argument.
+ * \return zero on success or a negative number on failure.
+ *
+ * Verifies the AGP device hasn't been acquired before and calls
+ * \c agp_backend_acquire.
+ */
+/* LINTED */
+int drm_agp_acquire_ioctl(DRM_IOCTL_ARGS)
 {
-	DRM_DEVICE;
-	int ret, rval;
+	return drm_agp_acquire((struct drm_device *) file->minor->dev);
+}
 
-	if (!dev->agp)
-		return (ENODEV);
-	if (!dev->agp->acquired)
-		return (EBUSY);
-
-	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_RELEASE,
-	    (intptr_t)0, FKIOCTL, kcred, &rval);
-	if (ret) {
-		DRM_ERROR("drm_agp_release: AGPIOC_RELEASE failed\n");
-		return (ENXIO);
+/**
+ * Release the AGP device.
+ *
+ * \param dev DRM device that is to release AGP.
+ * \return zero on success or a negative number on failure.
+ *
+ * Verifies the AGP device has been acquired and calls \c agp_backend_release.
+ */
+int drm_agp_release(struct drm_device * dev)
+{
+	if (!dev->agp || !dev->agp->acquired)
+		return -EINVAL;
+	{
+		int ret, rval;
+		if (ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_RELEASE,
+		    (intptr_t)0, FKIOCTL, kcred, &rval)) {
+			DRM_ERROR("AGPIOC_RELEASE failed");
+			return -ret;
+		}
 	}
 	dev->agp->acquired = 0;
-
-	return (ret);
+	return 0;
 }
 
-
-int
-drm_agp_do_release(drm_device_t *dev)
+/* LINTED */
+int drm_agp_release_ioctl(DRM_IOCTL_ARGS)
 {
-	int ret, rval;
-
-	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_RELEASE,
-	    (intptr_t)0, FKIOCTL, kcred, &rval);
-
-	if (ret == 0)
-		dev->agp->acquired = 0;
-
-	return (ret);
+	return drm_agp_release(dev);
 }
 
-/*ARGSUSED*/
-int
-drm_agp_enable(DRM_IOCTL_ARGS)
+/**
+ * Enable the AGP bus.
+ *
+ * \param dev DRM device that has previously acquired AGP.
+ * \param mode Requested AGP mode.
+ * \return zero on success or a negative number on failure.
+ *
+ * Verifies the AGP device has been acquired but not enabled, and calls
+ * \c agp_enable.
+ */
+int drm_agp_enable(struct drm_device * dev, struct drm_agp_mode mode)
 {
-	DRM_DEVICE;
-	drm_agp_mode_t modes;
-	agp_setup_t setup;
-	int ret, rval;
+	if (!dev->agp || !dev->agp->acquired)
+		return -EINVAL;
 
-	if (!dev->agp)
-		return (ENODEV);
-	if (!dev->agp->acquired)
-		return (EBUSY);
-
-	DRM_COPYFROM_WITH_RETURN(&modes, (void *)data, sizeof (modes));
-
-	dev->agp->mode = modes.mode;
-	setup.agps_mode = (uint32_t)modes.mode;
-
-
-	DRM_DEBUG("drm_agp_enable: dev->agp->mode=%lx", modes.mode);
-
-	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_SETUP,
-	    (intptr_t)&setup, FKIOCTL, kcred, &rval);
-	if (ret) {
-		DRM_ERROR("drm_agp_enable: failed");
-		return (EIO);
+	dev->agp->mode = mode.mode;
+	{
+		agp_setup_t setup;
+		int ret, rval;
+		setup.agps_mode = (uint32_t)mode.mode;
+		if (ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_SETUP,
+		    (intptr_t)&setup, FKIOCTL, kcred, &rval)) {
+			DRM_ERROR("AGPIOC_SETUP failed");
+			return -ret;
+		}
 	}
-
-	dev->agp->base = dev->agp->agp_info.agpi_aperbase;
 	dev->agp->enabled = 1;
-
-	DRM_DEBUG("drm_agp_enable: dev->agp->base=0x%lx", dev->agp->base);
-	return (0);
+	return 0;
 }
 
-/*ARGSUSED*/
-int
-drm_agp_alloc(DRM_IOCTL_ARGS)
+/* LINTED */
+int drm_agp_enable_ioctl(DRM_IOCTL_ARGS)
 {
-	DRM_DEVICE;
-	drm_agp_mem_t    	*entry;
-	agp_allocate_t		alloc;
-	drm_agp_buffer_t	request;
-	int pages;
+	struct drm_agp_mode *mode = data;
+
+	return drm_agp_enable(dev, *mode);
+}
+
+/**
+ * Allocate AGP memory.
+ *
+ * \param inode device inode.
+ * \param file_priv file private pointer.
+ * \param cmd command.
+ * \param arg pointer to a drm_agp_buffer structure.
+ * \return zero on success or a negative number on failure.
+ *
+ * Verifies the AGP device is present and has been acquired, allocates the
+ * memory via alloc_agp() and creates a drm_agp_mem entry for it.
+ */
+int drm_agp_alloc(struct drm_device *dev, struct drm_agp_buffer *request)
+{
+	struct drm_agp_mem *entry;
+	agp_allocate_t alloc;
+	unsigned long pages;
 	int ret, rval;
 
 	if (!dev->agp || !dev->agp->acquired)
-		return (EINVAL);
+		return -EINVAL;
+	if (!(entry = kmalloc(sizeof(*entry), GFP_KERNEL)))
+		return -ENOMEM;
 
-	DRM_COPYFROM_WITH_RETURN(&request, (void *)data, sizeof (request));
+	(void) memset(entry, 0, sizeof(*entry));
 
-	entry = kmem_zalloc(sizeof (*entry), KM_SLEEP);
+	pages = (request->size + PAGE_SIZE - 1) / PAGE_SIZE;
 
-	pages = btopr(request.size);
-	alloc.agpa_pgcount = pages;
+	alloc.agpa_pgcount = (uint32_t) pages;
 	alloc.agpa_type = AGP_NORMAL;
 	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_ALLOCATE,
 	    (intptr_t)&alloc, FKIOCTL, kcred, &rval);
 	if (ret) {
-		DRM_ERROR("drm_agp_alloc: AGPIOC_ALLOCATE failed, ret=%d", ret);
-		kmem_free(entry, sizeof (*entry));
-		return (ret);
+		DRM_ERROR("AGPIOC_ALLOCATE failed");
+		kfree(entry, sizeof (*entry));
+		return -ret;
 	}
 
+	entry->handle = alloc.agpa_key + DRM_AGP_KEY_OFFSET;
 	entry->bound = 0;
-	entry->pages = pages;
-	entry->handle = (void*)(uintptr_t)(alloc.agpa_key + DRM_AGP_KEY_OFFSET);
-	entry->prev = NULL;
-	entry->phys_addr = (void*)(uintptr_t)alloc.agpa_physical;
-	entry->next = dev->agp->memory;
-	if (dev->agp->memory)
-		dev->agp->memory->prev = entry;
-	dev->agp->memory = entry;
+	entry->pages = (int) pages;
+	list_add(&entry->head, &dev->agp->memory, (caddr_t)entry);
 
-	DRM_DEBUG("entry->phys_addr %lx", entry->phys_addr);
+	request->handle = entry->handle;
+	request->physical = alloc.agpa_physical;
 
-	/* physical is used only by i810 driver */
-	request.physical = alloc.agpa_physical;
-	request.handle = (unsigned long)entry->handle;
-
-	/*
-	 * If failed to ddi_copyout(), we will free allocated AGP memory
-	 * when closing drm
-	 */
-	DRM_COPYTO_WITH_RETURN((void *)data, &request, sizeof (request));
-
-	return (0);
+	return 0;
 }
 
-/*ARGSUSED*/
-static drm_agp_mem_t *
-drm_agp_lookup_entry(drm_device_t *dev, void *handle)
+/* LINTED */
+int drm_agp_alloc_ioctl(DRM_IOCTL_ARGS)
 {
-	drm_agp_mem_t *entry;
+	struct drm_agp_buffer *request = data;
 
-	for (entry = dev->agp->memory; entry; entry = entry->next) {
+	return drm_agp_alloc(dev, request);
+}
+
+/**
+ * Search for the AGP memory entry associated with a handle.
+ *
+ * \param dev DRM device structure.
+ * \param handle AGP memory handle.
+ * \return pointer to the drm_agp_mem structure associated with \p handle.
+ *
+ * Walks through drm_agp_head::memory until finding a matching handle.
+ */
+static struct drm_agp_mem *drm_agp_lookup_entry(struct drm_device * dev,
+					   unsigned long handle)
+{
+	struct drm_agp_mem *entry;
+
+	list_for_each_entry(entry, struct drm_agp_mem, &dev->agp->memory, head) {
 		if (entry->handle == handle)
-			return (entry);
+			return entry;
 	}
-
-	return (NULL);
+	return NULL;
 }
 
-/*ARGSUSED*/
-int
-drm_agp_unbind(DRM_IOCTL_ARGS)
+/**
+ * Unbind AGP memory from the GATT (ioctl).
+ *
+ * \param inode device inode.
+ * \param file_priv DRM file private.
+ * \param cmd command.
+ * \param arg pointer to a drm_agp_binding structure.
+ * \return zero on success or a negative number on failure.
+ *
+ * Verifies the AGP device is present and acquired, looks-up the AGP memory
+ * entry and passes it to the unbind_agp() function.
+ */
+int drm_agp_unbind(struct drm_device *dev, struct drm_agp_binding *request)
 {
-	DRM_DEVICE;
-	agp_unbind_t unbind;
-	drm_agp_binding_t request;
-	drm_agp_mem_t *entry;
+	struct drm_agp_mem *entry;
+	int ret;
+
+	if (!dev->agp || !dev->agp->acquired)
+		return -EINVAL;
+	if (!(entry = drm_agp_lookup_entry(dev, request->handle)))
+		return -EINVAL;
+	if (!entry->bound)
+		return -EINVAL;
+	{
+		agp_unbind_t unbind;
+		int rval;
+		unbind.agpu_pri = 0;
+		unbind.agpu_key = (uintptr_t)entry->handle - DRM_AGP_KEY_OFFSET;
+		if (ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_UNBIND,
+		    (intptr_t)&unbind, FKIOCTL, kcred, &rval)) {
+			DRM_ERROR("AGPIOC_UNBIND failed");
+			return -ret;
+		}
+	}
+		entry->bound = 0;
+	return ret;
+}
+
+/* LINTED */
+int drm_agp_unbind_ioctl(DRM_IOCTL_ARGS)
+{
+	struct drm_agp_binding *request = data;
+
+	return drm_agp_unbind(dev, request);
+}
+
+/**
+ * Bind AGP memory into the GATT (ioctl)
+ *
+ * \param inode device inode.
+ * \param file_priv DRM file private.
+ * \param cmd command.
+ * \param arg pointer to a drm_agp_binding structure.
+ * \return zero on success or a negative number on failure.
+ *
+ * Verifies the AGP device is present and has been acquired and that no memory
+ * is currently bound into the GATT. Looks-up the AGP memory entry and passes
+ * it to bind_agp() function.
+ */
+int drm_agp_bind(struct drm_device *dev, struct drm_agp_binding *request)
+{
+	struct drm_agp_mem *entry;
+	int retcode;
+	int page;
+
+	if (!dev->agp || !dev->agp->acquired)
+		return -EINVAL;
+	if (!(entry = drm_agp_lookup_entry(dev, request->handle)))
+		return -EINVAL;
+	if (entry->bound)
+		return -EINVAL;
+	page = (request->offset + PAGE_SIZE - 1) / PAGE_SIZE;
+	{
+		uint_t key = (uintptr_t)entry->handle - DRM_AGP_KEY_OFFSET;
+		if (retcode = drm_agp_bind_memory(key, page, dev)) {
+			DRM_ERROR("failed key=0x%x, page=0x%x, "
+			    "agp_base=0x%lx", key, page, dev->agp->base);
+			return retcode;
+		}
+	}
+	entry->bound = dev->agp->base + (page << PAGE_SHIFT);
+	DRM_DEBUG("base = 0x%lx entry->bound = 0x%lx\n",
+		  dev->agp->base, entry->bound);
+	return 0;
+}
+
+/* LINTED */
+int drm_agp_bind_ioctl(DRM_IOCTL_ARGS)
+{
+	struct drm_agp_binding *request = data;
+
+	return drm_agp_bind(dev, request);
+}
+
+/**
+ * Free AGP memory (ioctl).
+ *
+ * \param inode device inode.
+ * \param file_priv DRM file private.
+ * \param cmd command.
+ * \param arg pointer to a drm_agp_buffer structure.
+ * \return zero on success or a negative number on failure.
+ *
+ * Verifies the AGP device is present and has been acquired and looks up the
+ * AGP memory entry. If the memory it's currently bound, unbind it via
+ * unbind_agp(). Frees it via free_agp() as well as the entry itself
+ * and unlinks from the doubly linked list it's inserted in.
+ */
+int drm_agp_free(struct drm_device *dev, struct drm_agp_buffer *request)
+{
+	struct drm_agp_mem *entry;
+
+	if (!dev->agp || !dev->agp->acquired)
+		return -EINVAL;
+	if (!(entry = drm_agp_lookup_entry(dev, request->handle)))
+		return -EINVAL;
+	if (entry->bound)
+		(void) drm_agp_unbind_memory(request->handle, dev);
+
+	list_del(&entry->head);
+	{
+		int agpu_key = (uintptr_t)entry->handle - DRM_AGP_KEY_OFFSET;
+		int ret, rval;
+		ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_DEALLOCATE,
+		    (intptr_t)agpu_key, FKIOCTL, kcred, &rval);
+		if (ret) {
+			DRM_ERROR("AGPIOC_DEALLOCATE failed,"
+			    "akey=%d, ret=%d", agpu_key, ret);
+			return -ret;
+		}
+	}
+	kfree(entry, sizeof (*entry));
+	return 0;
+}
+
+/* LINTED */
+int drm_agp_free_ioctl(DRM_IOCTL_ARGS)
+{
+	struct drm_agp_buffer *request = data;
+
+	return drm_agp_free(dev, request);
+}
+
+/**
+ * Initialize the AGP resources.
+ *
+ * \return pointer to a drm_agp_head structure.
+ *
+ * Gets the drm_agp_t structure which is made available by the agpgart module
+ * via the inter_module_* functions. Creates and initializes a drm_agp_head
+ * structure.
+ */
+struct drm_agp_head *drm_agp_init(struct drm_device *dev)
+{
+	struct drm_agp_head *head = NULL;
 	int ret, rval;
 
-	if (!dev->agp || !dev->agp->acquired)
-		return (EINVAL);
-
-	DRM_COPYFROM_WITH_RETURN(&request, (void *)data, sizeof (request));
-
-	if (!(entry = drm_agp_lookup_entry(dev, (void *)request.handle)))
-		return (EINVAL);
-	if (!entry->bound)
-		return (EINVAL);
-
-	unbind.agpu_pri = 0;
-	unbind.agpu_key = (uintptr_t)entry->handle - DRM_AGP_KEY_OFFSET;
-
-	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_UNBIND,
-	    (intptr_t)&unbind, FKIOCTL, kcred, &rval);
+	if (!(head = kmalloc(sizeof(*head), GFP_KERNEL)))
+		return NULL;
+	(void) memset((void *)head, 0, sizeof(*head));
+	ret = ldi_ident_from_dip(dev->devinfo, &head->agpgart_li);
 	if (ret) {
-		DRM_ERROR("drm_agp_unbind: AGPIOC_UNBIND failed");
-		return (EIO);
-	}
-	entry->bound = 0;
-	return (0);
-}
-
-/*ARGSUSED*/
-int
-drm_agp_bind(DRM_IOCTL_ARGS)
-{
-	DRM_DEVICE;
-	drm_agp_binding_t request;
-	drm_agp_mem_t   *entry;
-	int			start;
-	uint_t		key;
-
-	if (!dev->agp || !dev->agp->acquired)
-		return (EINVAL);
-
-	DRM_COPYFROM_WITH_RETURN(&request, (void *)data, sizeof (request));
-
-	entry = drm_agp_lookup_entry(dev, (void *)request.handle);
-	if (!entry || entry->bound)
-		return (EINVAL);
-
-	key = (uintptr_t)entry->handle - DRM_AGP_KEY_OFFSET;
-	start = btopr(request.offset);
-	if (drm_agp_bind_memory(key, start, dev)) {
-		DRM_ERROR("drm_agp_bind: failed key=%x, start=0x%x, "
-		    "agp_base=0x%lx", key, start, dev->agp->base);
-		return (EIO);
-	}
-
-	entry->bound = dev->agp->base + (start << AGP_PAGE_SHIFT);
-
-	return (0);
-}
-
-/*ARGSUSED*/
-int
-drm_agp_free(DRM_IOCTL_ARGS)
-{
-	DRM_DEVICE;
-	drm_agp_buffer_t request;
-	drm_agp_mem_t	*entry;
-	int	ret, rval;
-	int	agpu_key;
-
-	DRM_COPYFROM_WITH_RETURN(&request, (void *)data, sizeof (request));
-	if (!dev->agp || !dev->agp->acquired)
-		return (EINVAL);
-	if (!(entry = drm_agp_lookup_entry(dev, (void *)request.handle)))
-		return (EINVAL);
-	if (entry->bound)
-		(void) drm_agp_unbind_memory(request.handle, dev);
-
-	if (entry == dev->agp->memory)
-		dev->agp->memory = entry->next;
-	if (entry->prev)
-		entry->prev->next = entry->next;
-	if (entry->next)
-		entry->next->prev = entry->prev;
-
-	agpu_key = (uintptr_t)entry->handle - DRM_AGP_KEY_OFFSET;
-	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_DEALLOCATE,
-	    (intptr_t)agpu_key, FKIOCTL, kcred, &rval);
-	if (ret) {
-		DRM_ERROR("drm_agp_free: AGPIOC_DEALLOCATE failed,"
-		    "akey=%d, ret=%d", agpu_key, ret);
-		return (EIO);
-	}
-	drm_free(entry, sizeof (*entry), DRM_MEM_AGPLISTS);
-	return (0);
-}
-
-/*ARGSUSED*/
-drm_agp_head_t *
-drm_agp_init(drm_device_t *dev)
-{
-	drm_agp_head_t *agp   = NULL;
-	int	retval, rval;
-
-	agp = kmem_zalloc(sizeof (drm_agp_head_t), KM_SLEEP);
-
-	retval = ldi_ident_from_dip(dev->dip, &agp->agpgart_li);
-	if (retval != 0) {
-		DRM_ERROR("drm_agp_init: failed to get layerd ident, retval=%d",
-		    retval);
+		DRM_ERROR("failed to get layerd ident, ret=%d", ret);
 		goto err_1;
 	}
 
-	retval = ldi_open_by_name(AGP_DEVICE, FEXCL, kcred,
-	    &agp->agpgart_lh, agp->agpgart_li);
-	if (retval != 0) {
-		DRM_ERROR("drm_agp_init: failed to open %s, retval=%d",
-		    AGP_DEVICE, retval);
+	ret = ldi_open_by_name(AGP_DEVICE, FEXCL, kcred,
+	    &head->agpgart_lh, head->agpgart_li);
+	if (ret) {
+		DRM_ERROR("failed to open %s, ret=%d", AGP_DEVICE, ret);
 		goto err_2;
 	}
 
-	retval = ldi_ioctl(agp->agpgart_lh, AGPIOC_INFO,
-	    (intptr_t)&agp->agp_info, FKIOCTL, kcred, &rval);
-
-	if (retval != 0) {
-		DRM_ERROR("drm_agp_init: failed to get agpinfo, retval=%d",
-		    retval);
+	ret = ldi_ioctl(head->agpgart_lh, AGPIOC_INFO,
+	    (intptr_t)&head->agp_info, FKIOCTL, kcred, &rval);
+	if (ret) {
+		DRM_ERROR("failed to get agpinfo, ret=%d", ret);
 		goto err_3;
 	}
-
-	return (agp);
+	INIT_LIST_HEAD(&head->memory);
+	head->base = head->agp_info.agpi_aperbase;
+	return head;
 
 err_3:
-	(void) ldi_close(agp->agpgart_lh, FEXCL, kcred);
-
+	(void) ldi_close(head->agpgart_lh, FEXCL, kcred);
 err_2:
-	ldi_ident_release(agp->agpgart_li);
-
+	ldi_ident_release(head->agpgart_li);
 err_1:
-	kmem_free(agp, sizeof (drm_agp_head_t));
-	return (NULL);
+	kfree(head, sizeof(*head));
+	return NULL;
 }
 
-/*ARGSUSED*/
-void
-drm_agp_fini(drm_device_t *dev)
+/* LINTED */
+void *drm_agp_allocate_memory(size_t pages, uint32_t type, struct drm_device *dev)
 {
-	drm_agp_head_t *agp = dev->agp;
-	(void) ldi_close(agp->agpgart_lh, FEXCL, kcred);
-	ldi_ident_release(agp->agpgart_li);
-	kmem_free(agp, sizeof (drm_agp_head_t));
-	dev->agp = NULL;
+	return NULL;
 }
 
-
-/*ARGSUSED*/
-void *
-drm_agp_allocate_memory(size_t pages, uint32_t type, drm_device_t *dev)
+/* LINTED */
+int drm_agp_free_memory(agp_allocate_t *handle, struct drm_device *dev)
 {
-	return (NULL);
+	return 1;
 }
 
-/*ARGSUSED*/
-int
-drm_agp_free_memory(agp_allocate_t *handle, drm_device_t *dev)
-{
-	return (1);
-}
-
-/*ARGSUSED*/
-int
-drm_agp_bind_memory(unsigned int key, uint32_t start, drm_device_t *dev)
+int drm_agp_bind_memory(unsigned int key, uint32_t start, struct drm_device *dev)
 {
 	agp_bind_t bind;
-	int	ret, rval;
+	int ret, rval;
 
 	bind.agpb_pgstart = start;
 	bind.agpb_key = key;
-	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_BIND,
-	    (intptr_t)&bind, FKIOCTL, kcred, &rval);
-	if (ret) {
-		DRM_DEBUG("drm_agp_bind_meory: AGPIOC_BIND failed");
-		return (EIO);
+	if (ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_BIND,
+	    (intptr_t)&bind, FKIOCTL, kcred, &rval)) {
+		DRM_DEBUG("AGPIOC_BIND failed");
+		return -ret;
 	}
-	return (0);
+	return 0;
 }
 
-/*ARGSUSED*/
-int
-drm_agp_unbind_memory(unsigned long handle, drm_device_t *dev)
+int drm_agp_unbind_memory(unsigned long handle, struct drm_device *dev)
 {
+	struct drm_agp_mem *entry;
 	agp_unbind_t unbind;
-	drm_agp_mem_t   *entry;
 	int ret, rval;
 
 	if (!dev->agp || !dev->agp->acquired)
-		return (EINVAL);
+		return -EINVAL;
 
-	entry = drm_agp_lookup_entry(dev, (void *)handle);
+	entry = drm_agp_lookup_entry(dev, handle);
 	if (!entry || !entry->bound)
-		return (EINVAL);
+		return -EINVAL;
 
 	unbind.agpu_pri = 0;
 	unbind.agpu_key = (uintptr_t)entry->handle - DRM_AGP_KEY_OFFSET;
-
-	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_UNBIND,
-	    (intptr_t)&unbind, FKIOCTL, kcred, &rval);
-	if (ret) {
-		DRM_ERROR("drm_agp_unbind: AGPIO_UNBIND failed");
-		return (EIO);
+	if (ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_UNBIND,
+	    (intptr_t)&unbind, FKIOCTL, kcred, &rval)) {
+		DRM_ERROR("AGPIO_UNBIND failed");
+		return -ret;
 	}
 	entry->bound = 0;
-	return (0);
+	return 0;
 }
 
-/*
+/**
  * Binds a collection of pages into AGP memory at the given offset, returning
  * the AGP memory structure containing them.
  *
@@ -505,83 +549,85 @@ drm_agp_unbind_memory(unsigned long handle, drm_device_t *dev)
  * caller to handle that.
  */
 int
-drm_agp_bind_pages(drm_device_t *dev,
+drm_agp_bind_pages(struct drm_device *dev,
 		    pfn_t *pages,
 		    unsigned long num_pages,
-		    uint32_t gtt_offset)
+		    uint32_t gtt_offset,
+		    unsigned int agp_type)
 {
+	agp_gtt_info_t bind;
+	int ret, rval;
 
-	agp_bind_pages_t bind;
-	int	ret, rval;
+	bind.agp_pgstart = gtt_offset / AGP_PAGE_SIZE;
+	bind.agp_npage = num_pages;
+	bind.agp_phyaddr = pages;
+	bind.agp_flags = agp_type;
 
-	bind.agpb_pgstart = gtt_offset / AGP_PAGE_SIZE;
-	bind.agpb_pgcount = num_pages;
-	bind.agpb_pages = pages;
 	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_PAGES_BIND,
 	    (intptr_t)&bind, FKIOCTL, kcred, &rval);
 	if (ret) {
 		DRM_ERROR("AGPIOC_PAGES_BIND failed ret %d", ret);
-		return (ret);
+		return -ret;
 	}
-	return (0);
+	return 0;
 }
 
 int
-drm_agp_unbind_pages(drm_device_t *dev,
+drm_agp_unbind_pages(struct drm_device *dev,
+		    pfn_t *pages,
 		    unsigned long num_pages,
 		    uint32_t gtt_offset,
+		    pfn_t scratch,
 		    uint32_t type)
 {
+	agp_gtt_info_t unbind;
+	int ret, rval;
 
-	agp_unbind_pages_t unbind;
-	int	ret, rval;
+	unbind.agp_pgstart = gtt_offset / AGP_PAGE_SIZE;
+	unbind.agp_npage = num_pages;
+	unbind.agp_type = type;
+	unbind.agp_phyaddr = pages;
+	unbind.agp_scratch = scratch;
 
-	unbind.agpb_pgstart = gtt_offset / AGP_PAGE_SIZE;
-	unbind.agpb_pgcount = num_pages;
-	unbind.agpb_type = type;
 	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_PAGES_UNBIND,
 	    (intptr_t)&unbind, FKIOCTL, kcred, &rval);
 	if (ret) {
-		DRM_DEBUG("drm_agp_unbind_pages AGPIOC_PAGES_UNBIND failed");
-		return (ret);
+		DRM_ERROR("AGPIOC_PAGES_UNBIND failed %d", ret);
+		return -ret;
 	}
-	return (0);
+	return 0;
 }
 
-/*
- * Certain Intel chipsets contains a global write buffer, and this can require
- * flushing from the drm or X.org to make sure all data has hit RAM before
- * initiating a GPU transfer, due to a lack of coherency with the integrated
- * graphics device and this buffer.
- */
-void
-drm_agp_chipset_flush(struct drm_device *dev)
+void drm_agp_chipset_flush(struct drm_device *dev)
 {
 	int ret, rval;
 
-	DRM_DEBUG("agp_chipset_flush");
 	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_FLUSHCHIPSET,
 	    (intptr_t)0, FKIOCTL, kcred, &rval);
-	if (ret != 0) {
-		DRM_ERROR("Failed to drm_agp_chipset_flush ret %d", ret);
-	}
+	if (ret)
+		DRM_ERROR("AGPIOC_FLUSHCHIPSET failed, ret=%d", ret);
 }
 
-/*
- * The pages are evict on suspend, so re-bind it at resume time
- */
-void
-drm_agp_rebind(struct drm_device *dev)
+int
+drm_agp_rw_gtt(struct drm_device *dev,
+		    unsigned long num_pages,
+		    uint32_t gtt_offset,
+		    void *gttp,
+		    uint32_t type)
 {
+	agp_rw_gtt_t gtt_info;
 	int ret, rval;
 
-	if (!dev->agp) {
-		return;
+	gtt_info.pgstart = gtt_offset / AGP_PAGE_SIZE;
+	gtt_info.pgcount = num_pages;
+	gtt_info.addr = gttp;
+	/* read = 0 write = 1 */
+	gtt_info.type = type;
+	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_RW_GTT,
+	    (intptr_t)&gtt_info, FKIOCTL, kcred, &rval);
+	if (ret) {
+		DRM_ERROR("AGPIOC_RW_GTT failed %d", ret);
+		return -ret;
 	}
-
-	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_PAGES_REBIND,
-	    (intptr_t)0, FKIOCTL, kcred, &rval);
-	if (ret != 0) {
-		DRM_ERROR("rebind failed %d", ret);
-	}
+	return 0;
 }

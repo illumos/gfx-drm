@@ -1,6 +1,5 @@
 /*
- * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
- * Use is subject to license terms.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -10,7 +9,7 @@
 /*
  * Copyright 1999 Precision Insight, Inc., Cedar Park, Texas.
  * Copyright 2000 VA Linux Systems, Inc., Sunnyvale, California.
- * Copyright (c) 2009, Intel Corporation.
+ * Copyright (c) 2009, 2012, Intel Corporation.
  * All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -39,44 +38,40 @@
  */
 
 #include "drmP.h"
+#ifdef __x86
+#include "drm_linux_list.h"
+#endif
 
 /* Device memory access structure */
+
 typedef struct drm_device_iomap {
-	uint_t			physical;	/* physical address */
-	uint_t			size;		/* size of mapping */
-	uint_t			drm_regnum;	/* register number */
-	caddr_t			drm_base;	/* kernel virtual address */
-	ddi_acc_handle_t	drm_handle; 	/* data access handle */
+	uint_t paddr;		/* physical address */
+	uint_t size;		/* size of mapping */
+	caddr_t kvaddr;		/* kernel virtual address */
+	ddi_acc_handle_t acc_handle; 	/* data access handle */
 } drm_device_iomap_t;
 
-void
-drm_mem_init(void)
-{
-}
-
-void
-drm_mem_uninit(void)
-{
-}
-
-/*ARGSUSED*/
 void *
 drm_alloc(size_t size, int area)
 {
+	_NOTE(ARGUNUSED(area))
+
 	return (kmem_zalloc(1 * size, KM_NOSLEEP));
 }
 
-/*ARGSUSED*/
 void *
 drm_calloc(size_t nmemb, size_t size, int area)
 {
+	_NOTE(ARGUNUSED(area))
+
 	return (kmem_zalloc(size * nmemb, KM_NOSLEEP));
 }
 
-/*ARGSUSED*/
 void *
 drm_realloc(void *oldpt, size_t oldsize, size_t size, int area)
 {
+	_NOTE(ARGUNUSED(area))
+
 	void *pt;
 
 	pt = kmem_zalloc(1 * size, KM_NOSLEEP);
@@ -85,137 +80,192 @@ drm_realloc(void *oldpt, size_t oldsize, size_t size, int area)
 		return (NULL);
 	}
 	if (oldpt && oldsize) {
-		bcopy(pt, oldpt, oldsize);
+		bcopy(oldpt, pt, min(oldsize, size));
 		kmem_free(oldpt, oldsize);
 	}
 	return (pt);
 }
 
-/*ARGSUSED*/
 void
 drm_free(void *pt, size_t size, int area)
 {
-	kmem_free(pt, size);
+	_NOTE(ARGUNUSED(area))
+
+	if (pt)
+		kmem_free(pt, size);
 }
 
-/*ARGSUSED*/
 int
-drm_get_pci_index_reg(dev_info_t *devi, uint_t physical, uint_t size,
-    off_t *off)
+drm_get_pci_index_reg(dev_info_t *dip, uint_t paddr, uint_t size, off_t *off)
 {
-	int		length;
-	pci_regspec_t	*regs;
-	int		n_reg, i;
-	int		regnum;
-	uint_t		base, regsize;
+	_NOTE(ARGUNUSED(size))
+
+	pci_regspec_t *regs = NULL;
+	int len;
+	uint_t regbase, regsize;
+	int nregs, i;
+	int regnum;
 
 	regnum = -1;
 
-	if (ddi_dev_nregs(devi, &n_reg) == DDI_FAILURE) {
-		DRM_ERROR("drm_get_pci_index_reg:ddi_dev_nregs failed\n");
-		n_reg = 0;
+	if (ddi_dev_nregs(dip, &nregs) == DDI_FAILURE) {
+		DRM_ERROR("ddi_dev_nregs() failed");
 		return (-1);
 	}
 
-	if (ddi_getlongprop(DDI_DEV_T_ANY, devi, DDI_PROP_DONTPASS,
-	    "assigned-addresses", (caddr_t)&regs, &length) !=
-	    DDI_PROP_SUCCESS) {
-		DRM_ERROR("drm_get_pci_index_reg: ddi_getlongprop failed!\n");
-		goto error;
+	if (ddi_getlongprop(DDI_DEV_T_ANY, dip, DDI_PROP_DONTPASS,
+	    "assigned-addresses", (caddr_t)&regs, &len) != DDI_PROP_SUCCESS) {
+		DRM_ERROR("ddi_getlongprop() failed");
+		if (regs)
+			kmem_free(regs, (size_t)len);
+		return (-1);
 	}
 
-	for (i = 0; i < n_reg; i ++) {
-		base = (uint_t)regs[i].pci_phys_low;
+	for (i = 0; i < nregs; i ++) {
+		regbase = (uint_t)regs[i].pci_phys_low;
 		regsize = (uint_t)regs[i].pci_size_low;
-		if ((uint_t)physical >= base &&
-		    (uint_t)physical < (base + regsize)) {
+		if ((uint_t)paddr >= regbase &&
+		    (uint_t)paddr < (regbase + regsize)) {
 			regnum = i + 1;
-			*off = (off_t)(physical - base);
+			*off = (off_t)(paddr - regbase);
 			break;
 		}
 	}
 
-	kmem_free(regs, (size_t)length);
+	if (regs)
+		kmem_free(regs, (size_t)len);
 	return (regnum);
-error:
-	kmem_free(regs, (size_t)length);
-	return (-1);
 }
 
 /* data access attributes structure for register access */
 static ddi_device_acc_attr_t dev_attr = {
 	DDI_DEVICE_ATTR_V0,
+#ifdef _BIG_ENDIAN
+	DDI_STRUCTURE_LE_ACC,
+#else
 	DDI_NEVERSWAP_ACC,
+#endif
 	DDI_STRICTORDER_ACC,
+	DDI_FLAGERR_ACC
 };
 
-int
-do_ioremap(dev_info_t *devi, drm_device_iomap_t *iomap)
+static int
+__ioremap(dev_info_t *dip, drm_device_iomap_t *iomap)
 {
-	int regnum;
 	off_t offset;
+	int regnum;
 	int ret;
 
-	regnum =  drm_get_pci_index_reg(devi, iomap->physical,
-	    iomap->size, &offset);
+	regnum = drm_get_pci_index_reg(
+	    dip, iomap->paddr, iomap->size, &offset);
 	if (regnum < 0) {
-		DRM_ERROR("do_ioremap: can not find regster entry,"
-		    " start=0x%x, size=0x%x", iomap->physical, iomap->size);
-		return (ENXIO);
+		DRM_ERROR("can not find register entry: "
+		    "paddr=0x%x, size=0x%x", iomap->paddr, iomap->size);
+		return -ENXIO;
 	}
 
-	iomap->drm_regnum = regnum;
-
-	ret = ddi_regs_map_setup(devi, iomap->drm_regnum,
-	    (caddr_t *)&(iomap->drm_base), (offset_t)offset,
-	    (offset_t)iomap->size, &dev_attr, &iomap->drm_handle);
-	if (ret < 0) {
-		DRM_ERROR("do_ioremap: failed to map regs: regno=%d,"
-		    " offset=0x%x", regnum, offset);
-		iomap->drm_handle = NULL;
-		return (EFAULT);
+	ret = ddi_regs_map_setup(dip, regnum,
+	    (caddr_t *)&(iomap->kvaddr), (offset_t)offset,
+	    (offset_t)iomap->size, &dev_attr, &iomap->acc_handle);
+	if (ret != DDI_SUCCESS) {
+		DRM_ERROR("failed to map regs: "
+		    "regnum=%d, offset=0x%lx", regnum, offset);
+		iomap->acc_handle = NULL;
+		return -EFAULT;
 	}
 
-	return (0);
+	return 0;
 }
 
 int
-drm_ioremap(drm_device_t *softstate, drm_local_map_t *map)
+drm_ioremap(struct drm_device *dev, struct drm_local_map *map)
 {
-	drm_device_iomap_t iomap;
+	struct drm_device_iomap iomap;
 	int ret;
 
-	DRM_DEBUG("drm_ioremap called\n");
+	DRM_DEBUG("\n");
 
-	bzero(&iomap, sizeof (drm_device_iomap_t));
-	iomap.physical = map->offset;
+	iomap.paddr = map->offset;
 	iomap.size = map->size;
-	ret = do_ioremap(softstate->dip, &iomap);
 
+	ret = __ioremap(dev->devinfo, &iomap);
 	if (ret) {
-		DRM_ERROR("drm_ioremap: failed, physaddr=0x%x, size=0x%x",
+		DRM_ERROR("__ioremap failed: paddr=0x%lx, size=0x%lx",
 		    map->offset, map->size);
 		return (ret);
 	}
 
-	/* ddi_acc_handle_t */
-	map->dev_handle = iomap.drm_handle;
-	map->handle = (void *)iomap.drm_base;
-	map->dev_addr = iomap.drm_base;
+	map->handle = (void *)iomap.kvaddr;
+	map->acc_handle = iomap.acc_handle;
 
 	DRM_DEBUG(
-	    "map->handle is %p map->dev_addr is %lx map->size %x",
-	    (void *)map->handle, (unsigned long)map->dev_addr, map->size);
+	    "map->handle=%p, map->size=%lx",
+	    (void *)map->handle, map->size);
 
 	return (0);
 }
 
 void
-drm_ioremapfree(drm_local_map_t *map)
+drm_ioremapfree(struct drm_local_map *map)
 {
-	if (map->dev_handle == NULL) {
-		DRM_ERROR("drm_ioremapfree: handle is NULL");
-		return;
-	}
-	ddi_regs_map_free(&map->dev_handle);
+	if (map->acc_handle)
+		ddi_regs_map_free(&map->acc_handle);
 }
+
+#ifdef __x86
+struct drm_iomem {
+	void *addr;
+	size_t size;
+	struct list_head head;
+};
+
+struct list_head drm_iomem_list;
+
+void *
+drm_sun_ioremap(uint64_t paddr, size_t size, uint32_t mode)
+{
+	struct drm_iomem *iomem;
+	void *addr;
+
+	if (mode == DRM_MEM_CACHED)
+		mode = GFXP_MEMORY_CACHED;
+	else if (mode == DRM_MEM_UNCACHED)
+		mode = GFXP_MEMORY_UNCACHED;
+	else if (mode == DRM_MEM_WC)
+		mode = GFXP_MEMORY_WRITECOMBINED;
+	else
+		return (NULL);
+
+	addr = (void *)gfxp_alloc_kernel_space(size);
+	if(!addr)
+		return (NULL);
+	gfxp_load_kernel_space(paddr, size, mode, addr);
+	iomem = kmem_zalloc(sizeof(*iomem), KM_NOSLEEP);
+	if(!iomem){
+		gfxp_unmap_kernel_space(addr, size);
+		return (NULL);
+	}
+	iomem->addr = addr;
+	iomem->size = size;
+
+	INIT_LIST_HEAD(&iomem->head);
+	list_add(&iomem->head, &drm_iomem_list, (caddr_t)iomem);
+
+	return (addr);
+}
+
+void 
+drm_sun_iounmap(void *addr)
+{
+	struct drm_iomem *iomem;
+
+	list_for_each_entry(iomem, struct drm_iomem, &drm_iomem_list, head) {
+		if (iomem->addr == addr) {
+			gfxp_unmap_kernel_space(addr, iomem->size);	
+			list_del(&iomem->head);
+			kmem_free(iomem, sizeof(*iomem));
+			break;
+		}
+	}
+}
+#endif /* x86 */

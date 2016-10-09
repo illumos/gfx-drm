@@ -1,9 +1,11 @@
 /*
- * Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
- * Use is subject to license terms.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  */
 
-/* BEGIN CSTYLED */
+/*
+ * Copyright (c) 2012 Intel Corporation.  All rights reserved.
+ */
+
 /**
  * \file drm_pci.h
  * \brief PCI consistent, DMA-accessible memory functions.
@@ -37,91 +39,18 @@
 /**********************************************************************/
 /** \name PCI memory */
 /*@{*/
-/* END CSTYLED */
-
-#pragma ident	"%Z%%M%	%I%	%E% SMI"
 
 #include "drmP.h"
 #include <vm/seg_kmem.h>
 
-#define	PCI_DEVICE(x)	(((x)>>11) & 0x1f)
-#define	PCI_FUNCTION(x)	(((x) & 0x700) >> 8)
-#define	PCI_BUS(x)	(((x) & 0xff0000) >> 16)
-
 typedef struct drm_pci_resource {
-	uint_t	regnum;
+	uint_t regnum;
 	unsigned long offset;
 	unsigned long size;
 } drm_pci_resource_t;
 
-int
-pci_get_info(drm_device_t *softstate, int *bus, int *slot, int *func)
-{
-	int *regs_list;
-	uint_t nregs = 0;
-
-	if (ddi_prop_lookup_int_array(DDI_DEV_T_ANY, softstate->dip,
-	    DDI_PROP_DONTPASS, "reg", (int **)&regs_list, &nregs)
-	    != DDI_PROP_SUCCESS) {
-		DRM_ERROR("pci_get_info: get pci function bus device failed");
-		goto error;
-	}
-	*bus  = (int)PCI_BUS(regs_list[0]);
-	*slot = (int)PCI_DEVICE(regs_list[0]);
-	*func = (int)PCI_FUNCTION(regs_list[0]);
-
-	if (nregs > 0) {
-		ddi_prop_free(regs_list);
-	}
-	return (DDI_SUCCESS);
-error:
-	if (nregs > 0) {
-		ddi_prop_free(regs_list);
-	}
-	return (DDI_FAILURE);
-}
-
-int
-pci_get_irq(drm_device_t *statep)
-{
-	int irq;
-
-	extern int drm_supp_get_irq(void *);
-
-	irq = ddi_prop_get_int(DDI_DEV_T_ANY,
-	    statep->dip, DDI_PROP_DONTPASS, "interrupts", -1);
-
-	if (irq > 0) {
-		irq = drm_supp_get_irq(statep->drm_handle);
-	}
-
-	return (irq);
-}
-
-int
-pci_get_vendor(drm_device_t *statep)
-{
-	int vendorid;
-
-	vendorid = ddi_prop_get_int(DDI_DEV_T_ANY,
-	    statep->dip, DDI_PROP_DONTPASS, "vendor-id", 0);
-
-	return (vendorid);
-}
-
-int
-pci_get_device(drm_device_t *statep)
-{
-	int deviceid;
-
-	deviceid = ddi_prop_get_int(DDI_DEV_T_ANY,
-	    statep->dip, DDI_PROP_DONTPASS, "device-id", 0);
-
-	return (deviceid);
-}
-
 void
-drm_core_ioremap(struct drm_local_map *map, drm_device_t *dev)
+drm_core_ioremap(struct drm_local_map *map, struct drm_device *dev)
 {
 	if ((map->type == _DRM_AGP) && dev->agp) {
 		/*
@@ -137,8 +66,8 @@ drm_core_ioremap(struct drm_local_map *map, drm_device_t *dev)
 		 * After that, access to physical memory managed by agp gart
 		 * hardware in kernel space doesn't go through agp hardware,
 		 * it will be: kernel virtual ---> physical address.
-		 * Obviously, it is more efficient. But in solaris operating
-		 * system, the ioctl AGPIOC_ALLOCATE of apggart driver does
+		 * Obviously, it is more efficient. But in Solaris operating
+		 * system, the ioctl AGPIOC_ALLOCATE of agpgart driver does
 		 * not return physical address. We are unable to create the
 		 * direct mapping between kernel space and agp memory. So,
 		 * we remove the calling to agp_remap().
@@ -150,10 +79,11 @@ drm_core_ioremap(struct drm_local_map *map, drm_device_t *dev)
 	}
 }
 
-/*ARGSUSED*/
 void
-drm_core_ioremapfree(struct drm_local_map *map, drm_device_t *dev)
+drm_core_ioremapfree(struct drm_local_map *map, struct drm_device *dev)
 {
+	_NOTE(ARGUNUSED(dev))
+
 	if (map->type != _DRM_AGP) {
 		if (map->handle && map->size)
 			drm_ioremapfree(map);
@@ -165,26 +95,6 @@ drm_core_ioremapfree(struct drm_local_map *map, drm_device_t *dev)
 		 */
 		DRM_DEBUG("drm_core_ioremap: skipping agp_remap_free\n");
 	}
-}
-
-struct drm_local_map *
-drm_core_findmap(drm_device_t *dev, unsigned long handle)
-{
-	drm_local_map_t *map;
-
-	DRM_SPINLOCK_ASSERT(&dev->dev_lock);
-
-/*
- * For the time being, we compare the low 32 bit only,
- * We will hash handle to 32-bit to solve this issue later.
- */
-	TAILQ_FOREACH(map, &dev->maplist, link) {
-		if ((((unsigned long)map->handle) & 0x00000000ffffffff)
-		    == (handle & 0x00000000ffffffff))
-			return (map);
-	}
-
-	return (NULL);
 }
 
 /*
@@ -202,54 +112,50 @@ static ddi_dma_attr_t	hw_dma_attr = {
 		0xffffffff,		/* seg */
 		1,			/* sgllen */
 		4,			/* granular */
-		0			/* flags */
+		DDI_DMA_FLAGERR,	/* flags */
 };
 
 static ddi_device_acc_attr_t hw_acc_attr = {
 	DDI_DEVICE_ATTR_V0,
 	DDI_NEVERSWAP_ACC,
-	DDI_STRICTORDER_ACC
+	DDI_STRICTORDER_ACC,
+	DDI_FLAGERR_ACC
 };
 
-
 void *
-drm_pci_alloc(drm_device_t *dev, size_t size,
-    size_t align,  dma_addr_t maxaddr, int segments)
+drm_pci_alloc(struct drm_device *dev, size_t size,
+    size_t align, dma_addr_t maxaddr, int segments)
 {
-	drm_dma_handle_t	*dmah;
-	uint_t	count;
-	int ret = DDI_FAILURE;
+	struct drm_dma_handle *dmah;
+	uint_t count;
 
-	/* allocat continous physical memory for hw status page */
-	if (align == 0)
-		hw_dma_attr.dma_attr_align =  1;
-	else
-		hw_dma_attr.dma_attr_align = align;
+	/* allocate continous physical memory for hw status page */
+	hw_dma_attr.dma_attr_align = (!align) ? 1 : align;
 
 	hw_dma_attr.dma_attr_addr_hi = maxaddr;
 	hw_dma_attr.dma_attr_sgllen = segments;
 
-	dmah = kmem_zalloc(sizeof (drm_dma_handle_t), KM_SLEEP);
-	if (ret = ddi_dma_alloc_handle(dev->dip, &hw_dma_attr,
-	    DDI_DMA_SLEEP, NULL, &dmah->dma_hdl)) {
-		DRM_ERROR("drm_pci_alloc:ddi_dma_alloc_handle failed\n");
+	dmah = kmem_zalloc(sizeof(struct drm_dma_handle), KM_SLEEP);
+
+	if (ddi_dma_alloc_handle(dev->devinfo, &hw_dma_attr,
+	    DDI_DMA_SLEEP, NULL, &dmah->dma_hdl) != DDI_SUCCESS) {
+		DRM_ERROR("ddi_dma_alloc_handle() failed");
 		goto err3;
 	}
 
-	if (ret = ddi_dma_mem_alloc(dmah->dma_hdl, size, &hw_acc_attr,
+	if (ddi_dma_mem_alloc(dmah->dma_hdl, size, &hw_acc_attr,
 	    DDI_DMA_CONSISTENT | IOMEM_DATA_UNCACHED,
 	    DDI_DMA_SLEEP, NULL, (caddr_t *)&dmah->vaddr,
-	    &dmah->real_sz, &dmah->acc_hdl)) {
-		DRM_ERROR("drm_pci_alloc: ddi_dma_mem_alloc failed\n");
+	    &dmah->real_sz, &dmah->acc_hdl) != DDI_SUCCESS) {
+		DRM_ERROR("ddi_dma_mem_alloc() failed\n");
 		goto err2;
 	}
 
-	ret = ddi_dma_addr_bind_handle(dmah->dma_hdl, NULL,
+	if (ddi_dma_addr_bind_handle(dmah->dma_hdl, NULL,
 	    (caddr_t)dmah->vaddr, dmah->real_sz,
-	    DDI_DMA_RDWR|DDI_DMA_CONSISTENT,
-	    DDI_DMA_SLEEP, NULL, &dmah->cookie,  &count);
-	if (ret != DDI_DMA_MAPPED) {
-		DRM_ERROR("drm_pci_alloc: alloc phys memory failed");
+	    DDI_DMA_RDWR|DDI_DMA_CONSISTENT, DDI_DMA_SLEEP,
+	    NULL, &dmah->cookie, &count) != DDI_DMA_MAPPED) {
+		DRM_ERROR("ddi_dma_addr_bind_handle() failed");
 		goto err1;
 	}
 
@@ -273,14 +179,11 @@ err3:
 	return (NULL);
 }
 
-/*
- * pci_free_consistent()
- */
-/*ARGSUSED*/
 void
-drm_pci_free(drm_device_t *dev, drm_dma_handle_t *dmah)
+drm_pci_free(drm_dma_handle_t *dmah)
 {
 	ASSERT(dmah != NULL);
+
 	(void) ddi_dma_unbind_handle(dmah->dma_hdl);
 	ddi_dma_mem_free(&dmah->acc_hdl);
 	ddi_dma_free_handle(&dmah->dma_hdl);
@@ -288,13 +191,13 @@ drm_pci_free(drm_device_t *dev, drm_dma_handle_t *dmah)
 }
 
 int
-do_get_pci_res(drm_device_t *dev, drm_pci_resource_t *resp)
+do_get_pci_res(struct drm_device *dev, drm_pci_resource_t *resp)
 {
 	int length;
 	pci_regspec_t	*regs;
 
 	if (ddi_getlongprop(
-	    DDI_DEV_T_ANY, dev->dip, DDI_PROP_DONTPASS,
+	    DDI_DEV_T_ANY, dev->devinfo, DDI_PROP_DONTPASS,
 	    "assigned-addresses", (caddr_t)&regs, &length) !=
 	    DDI_PROP_SUCCESS) {
 		DRM_ERROR("do_get_pci_res: ddi_getlongprop failed!\n");
@@ -309,16 +212,15 @@ do_get_pci_res(drm_device_t *dev, drm_pci_resource_t *resp)
 	return (0);
 }
 
-/*ARGSUSED*/
 unsigned long
-drm_get_resource_start(drm_device_t *softstate, unsigned int regnum)
+drm_get_resource_start(struct drm_device *dev, unsigned int regnum)
 {
 	drm_pci_resource_t res;
 	int ret;
 
 	res.regnum = regnum;
 
-	ret = do_get_pci_res(softstate, &res);
+	ret = do_get_pci_res(dev, &res);
 
 	if (ret != 0) {
 		DRM_ERROR("drm_get_resource_start: ioctl failed");
@@ -329,9 +231,8 @@ drm_get_resource_start(drm_device_t *softstate, unsigned int regnum)
 
 }
 
-/*ARGSUSED*/
 unsigned long
-drm_get_resource_len(drm_device_t *softstate, unsigned int regnum)
+drm_get_resource_len(struct drm_device *softstate, unsigned int regnum)
 {
 	drm_pci_resource_t res;
 	int ret;
@@ -347,3 +248,4 @@ drm_get_resource_len(drm_device_t *softstate, unsigned int regnum)
 
 	return (res.size);
 }
+
