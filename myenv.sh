@@ -76,8 +76,7 @@ export MAILTO="$STAFFER"
 # specified, the build is simply run in a new task in the current project.
 export BUILD_PROJECT=
 
-# You should not need to change the next four lines
-export LOCKNAME="$(basename "$CODEMGR_WS")_nightly.lock"
+# You should not need to change the next three lines
 export ATLOG="$CODEMGR_WS/log"
 export LOGFILE="$ATLOG/nightly.log"
 export MACH="$(uname -p)"
@@ -181,3 +180,4 @@ ONBLD_BIN="${ONBLD_TOOLS}/bin"
 # POST_NIGHTLY can be any command to be run at the end of nightly.  See
 # nightly(1) for interactions between environment variables and this command.
 #POST_NIGHTLY=
+

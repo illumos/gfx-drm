@@ -96,13 +96,13 @@ all: sgs .WAIT $(SUBDIRS) pkg
 # $(ROOT)/licenses.
 #
 install: install1 install2 _msg stage-licenses
-	@cd msg; pwd; $(MAKE) _msg
-	@rm -rf "$(ROOT)/catalog"
+#	@cd msg; pwd; $(MAKE) _msg
+#	@rm -rf "$(ROOT)/catalog"
 
 stage-licenses: install2
 	@cd pkg; pwd; $(MAKE) stage-licenses
 
-install1: mapfiles closedbins sgs
+install1: sgs
 
 install2: install1 $(SUBDIRS)
 
