@@ -1759,6 +1759,14 @@ void i915_driver_postclose(struct drm_device *dev, struct drm_file *file_priv)
 	file_priv->driver_priv = NULL;
 }
 
+#ifdef _MULTI_DATAMODEL
+#define I915_IOCTL_DEF(ioctl, _func, _flags, _copyin32, _copyout32) \
+	[DRM_IOCTL_NR(ioctl) - DRM_COMMAND_BASE] = {.cmd = ioctl, .flags = _flags, .func = _func, .copyin32 = _copyin32, .copyout32 = _copyout32}
+#else
+#define I915_IOCTL_DEF(ioctl, _func, _flags, _copyin32, _copyout32) \
+	[DRM_IOCTL_NR(ioctl) - DRM_COMMAND_BASE] = {.cmd = ioctl, .flags = _flags, .func = _func, .copyin32 = NULL, .copyout32 = NULL}
+#endif
+
 struct drm_ioctl_desc i915_ioctls[] = {
 	I915_IOCTL_DEF(DRM_IOCTL_I915_INIT, i915_dma_init, DRM_AUTH|DRM_MASTER|DRM_ROOT_ONLY, NULL, NULL),
 	I915_IOCTL_DEF(DRM_IOCTL_I915_FLUSH, i915_flush_ioctl, DRM_AUTH, NULL, NULL),

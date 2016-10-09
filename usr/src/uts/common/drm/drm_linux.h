@@ -129,9 +129,11 @@
 #define copy_from_user DRM_COPY_FROM_USER
 #define unlikely(a)  (a)
 
+#if 0 /* See sys/agpgart.h */
 #define AGP_USER_TYPES (1 << 16)
 #define AGP_USER_MEMORY (AGP_USER_TYPES)
 #define AGP_USER_CACHED_MEMORY (AGP_USER_TYPES + 1)
+#endif
 
 #define ALIGN(x, a)	(((x) + ((a) - 1)) & ~((a) - 1))
 

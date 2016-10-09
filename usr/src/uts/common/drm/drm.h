@@ -55,9 +55,35 @@ typedef uint32_t __u32;
 typedef int64_t  __s64;
 typedef uint64_t __u64;
 typedef size_t   __kernel_size_t;
+#if defined(__SOLARIS__) || defined(__sun)
+#include <sys/types32.h>
+typedef unsigned long long drm_handle_t;
+#else
 typedef unsigned long drm_handle_t;
+#endif
 
 #endif
+
+/* Solaris-specific. */
+#if defined(__SOLARIS__) || defined(__sun)
+
+#define        _IOC_NRBITS     8
+#define        _IOC_TYPEBITS   8
+#define        _IOC_SIZEBITS   14
+#define        _IOC_DIRBITS    2
+
+#define        _IOC_NRSHIFT    0
+#define        _IOC_TYPESHIFT  (_IOC_NRSHIFT + _IOC_NRBITS)
+#define        _IOC_SIZESHIFT  (_IOC_TYPESHIFT + _IOC_TYPEBITS)
+#define        _IOC_DIRSHIFT   (_IOC_SIZESHIFT + _IOC_SIZEBITS)
+
+#define        _IOC(dir, type, nr, size) \
+       (((dir) /* already shifted */) | \
+       ((type) << _IOC_TYPESHIFT) | \
+       ((nr)   << _IOC_NRSHIFT) | \
+       ((size) << _IOC_SIZESHIFT))
+
+#endif /* __Solaris__ or __sun */
 
 #define DRM_NAME	"drm"	  /**< Name in kernel, /dev, and /proc */
 #define DRM_MIN_ORDER	5	  /**< At least 2^5 bytes = 32 bytes */
@@ -181,7 +207,8 @@ enum drm_map_type {
 	_DRM_SHM = 2,		  /**< shared, cached */
 	_DRM_AGP = 3,		  /**< AGP/GART */
 	_DRM_SCATTER_GATHER = 4,  /**< Scatter/gather memory for PCI DMA */
-	_DRM_CONSISTENT = 5	  /**< Consistent memory for PCI DMA */
+	_DRM_CONSISTENT = 5,	  /**< Consistent memory for PCI DMA */
+	_DRM_GEM = 6		  /**< GEM object (XXX: Not libdrm?) */
 };
 
 /**
@@ -210,12 +237,13 @@ struct drm_ctx_priv_map {
  * \sa drmAddMap().
  */
 struct drm_map {
-	unsigned long offset;	 /**< Requested physical address (0 for SAREA)*/
+	unsigned long long offset;	 /**< Requested physical address (0 for SAREA)*/
+	unsigned long long handle;	 
+				 /**< User-space: "Handle" to pass to mmap() */
+				 /**< Kernel-space: kernel-virtual address */
 	unsigned long size;	 /**< Requested physical size (bytes) */
 	enum drm_map_type type;	 /**< Type of memory to map */
 	enum drm_map_flags flags;	 /**< Flags */
-	void *handle;		 /**< User-space: "Handle" to pass to mmap() */
-				 /**< Kernel-space: kernel-virtual address */
 	int mtrr;		 /**< MTRR slot used */
 	/*   Private data */
 };
@@ -322,18 +350,22 @@ enum drm_dma_flags {
  *
  * \sa drmAddBufs().
  */
+
+typedef enum {
+       _DRM_PAGE_ALIGN = 0x01, /**< Align on page boundaries for DMA */
+       _DRM_AGP_BUFFER = 0x02, /**< Buffer is in AGP space */
+       _DRM_SG_BUFFER  = 0x04, /**< Scatter/gather memory buffer */
+       _DRM_FB_BUFFER  = 0x08, /**< Buffer is in frame buffer */
+       _DRM_PCI_BUFFER_RO = 0x10 /**< Map PCI DMA buffer read-only */
+} drm_buf_flag;
+
+
 struct drm_buf_desc {
 	int count;		 /**< Number of buffers of this size */
 	int size;		 /**< Size in bytes */
 	int low_mark;		 /**< Low water mark */
 	int high_mark;		 /**< High water mark */
-	enum {
-		_DRM_PAGE_ALIGN = 0x01,	/**< Align on page boundaries for DMA */
-		_DRM_AGP_BUFFER = 0x02,	/**< Buffer is in AGP space */
-		_DRM_SG_BUFFER = 0x04,	/**< Scatter/gather memory buffer */
-		_DRM_FB_BUFFER = 0x08,	/**< Buffer is in frame buffer */
-		_DRM_PCI_BUFFER_RO = 0x10 /**< Map PCI DMA buffer read-only */
-	} flags;
+	drm_buf_flag flags;
 	unsigned long agp_start; /**<
 				  * Start address of where the AGP buffers are
 				  * in the AGP aperture
@@ -379,6 +411,7 @@ struct drm_buf_map {
 	void *virtual;		/**< Mmap'd area in user-virtual */
 #endif
 	struct drm_buf_pub *list;	/**< Buffer information */
+	int fd;
 };
 
 /**
