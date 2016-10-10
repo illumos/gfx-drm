@@ -462,7 +462,7 @@ gmbus_xfer(struct i2c_adapter *adapter,
 		ret = -ETIMEDOUT;
 	}
 	I915_WRITE(GMBUS0 + reg_offset, 0);
-	ret = ret ?: i;
+	ret = ret ? ret : i;
 	goto out;
 
 clear_err:

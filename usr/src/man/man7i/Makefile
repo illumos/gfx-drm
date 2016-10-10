@@ -13,23 +13,16 @@
 # Copyright 2011, Richard Lowe
 #
 
-SUBDIRS=	man1		\
-		man3x		\
-		man7		\
-		man7d		\
-		man7i
+include		$(SRC)/Makefile.master
 
-.PARALLEL: $(SUBDIRS)
+MANSECT= 	7i
 
-all		:= TARGET = all
-clean		:= TARGET = clean
-clobber		:= TARGET = clobber
-install		:= TARGET = install
-check		:= TARGET = check
+MANFILES= 	agpgart_io.7i
 
-all check clean clobber install: $(SUBDIRS)
+MANLINKS=
 
-$(SUBDIRS):	FRC
-	@cd $@; pwd; $(MAKE) $(TARGET)
+.KEEP_STATE:
 
-FRC:
+include		$(SRC)/man/Makefile.man
+
+install:	$(ROOTMANFILES) $(ROOTMANLINKS)

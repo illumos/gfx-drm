@@ -353,7 +353,6 @@ static int drm_get_minor(struct drm_device *dev, struct drm_minor **minor, int t
 
 
 err_g2:
-err_mem:
 	kfree(new_minor, sizeof (*new_minor));
 err_idr:
 	(void) idr_remove(&drm_minors_idr, minor_id);

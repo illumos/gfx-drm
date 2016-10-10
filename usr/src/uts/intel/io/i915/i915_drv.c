@@ -110,7 +110,7 @@ static struct modldrv modldrv = {
 };
 
 static struct modlinkage modlinkage = {
-	MODREV_1, (void *) &modldrv, NULL
+	MODREV_1, { (void *) &modldrv, NULL }
 };
 
 #define INTEL_VGA_DEVICE(id, info) {		\
@@ -969,6 +969,9 @@ i915_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
 		}
 
 		return (i915_resume(dev));
+
+	default:
+		break;
 	}
 
 	DRM_ERROR("only supports attach or resume");
@@ -996,6 +999,9 @@ i915_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
 
 	case DDI_SUSPEND:
 		return (i915_suspend(dev));
+
+	default:
+		break;
 	}
 
 	DRM_ERROR("only supports detach or suspend");

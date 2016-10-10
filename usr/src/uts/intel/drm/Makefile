@@ -18,7 +18,7 @@
 #
 # CDDL HEADER END
 #
-# uts/intel/drm/Makefile
+
 #
 # Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
@@ -39,10 +39,11 @@ MODULE		= drm
 OBJECTS		= $(DRM_OBJS:%=$(OBJS_DIR)/%)
 LINTS		= $(DRM_OBJS:%.o=$(LINTS_DIR)/%.ln)
 ROOTMODULE	= $(ROOT_MISC_DIR)/$(MODULE)
-DRM_SRC		= $(UTSBASE)/i86pc/io/drm
-GFX_DIR		= $(UTSBASE)/i86pc/io/gfx_private
 
-INC_PATH	+= -I$(DRM_SRC) -I$(GFX_DIR)
+CMN_DRM		= $(UTSBASE)/common/drm
+
+# Includes
+INC_PATH	+= -I$(CMN_DRM)
 
 # Dependency
 LDFLAGS		+= -dy -Nmisc/agpmaster -Nmisc/gfx_private
@@ -51,9 +52,10 @@ LDFLAGS		+= -dy -Nmisc/agpmaster -Nmisc/gfx_private
 #	Include common rules.
 #
 include $(UTSBASE)/intel/Makefile.intel
+include $(UTSBASE)/common/io/drm/Makefile.mod
 
 CERRWARN	+= -_gcc=-Wno-parentheses
-CERRWARN	+= -_gcc=-Wno-uninitialized
+CERRWARN	+= -_gcc=-Wno-unused-function
 CERRWARN	+= -_gcc=-Wno-unused-variable
 
 #
@@ -83,6 +85,13 @@ modlintlib:	$(MODLINTLIB_DEPS)
 clean.lint:	$(CLEAN_LINT_DEPS)
 
 install:	$(INSTALL_DEPS)
+
+$(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/drm/%.c
+	$(COMPILE.c) -o $@ $<
+	$(CTFCONVERT_O)
+
+$(LINTS_DIR)/%.ln:		$(UTSBASE)/common/io/drm/%.c
+	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
 #
 #	Include common targets.

@@ -555,13 +555,13 @@ drm_agp_bind_pages(struct drm_device *dev,
 		    uint32_t gtt_offset,
 		    unsigned int agp_type)
 {
-	agp_gtt_info_t bind;
+	agp_bind_pages_t bind;
 	int ret, rval;
 
-	bind.agp_pgstart = gtt_offset / AGP_PAGE_SIZE;
-	bind.agp_npage = num_pages;
-	bind.agp_phyaddr = pages;
-	bind.agp_flags = agp_type;
+	bind.agpb_pgstart = gtt_offset / AGP_PAGE_SIZE;
+	bind.agpb_pgcount = num_pages;
+	bind.agpb_pages = pages;
+	bind.agpb_type = agp_type;
 
 	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_PAGES_BIND,
 	    (intptr_t)&bind, FKIOCTL, kcred, &rval);
@@ -574,20 +574,19 @@ drm_agp_bind_pages(struct drm_device *dev,
 
 int
 drm_agp_unbind_pages(struct drm_device *dev,
-		    pfn_t *pages,
+		    pfn_t *pages,	/* NULL */
 		    unsigned long num_pages,
 		    uint32_t gtt_offset,
 		    pfn_t scratch,
-		    uint32_t type)
+		    uint32_t ignored)	/* old "VT_switch" flag */
 {
-	agp_gtt_info_t unbind;
+	agp_unbind_pages_t unbind;
 	int ret, rval;
 
-	unbind.agp_pgstart = gtt_offset / AGP_PAGE_SIZE;
-	unbind.agp_npage = num_pages;
-	unbind.agp_type = type;
-	unbind.agp_phyaddr = pages;
-	unbind.agp_scratch = scratch;
+	unbind.agpu_pgstart = gtt_offset / AGP_PAGE_SIZE;
+	unbind.agpu_pgcount = num_pages;
+	unbind.agpu_scratch = scratch;
+	unbind.agpu_flags = 0;
 
 	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_PAGES_UNBIND,
 	    (intptr_t)&unbind, FKIOCTL, kcred, &rval);
@@ -613,18 +612,18 @@ drm_agp_rw_gtt(struct drm_device *dev,
 		    unsigned long num_pages,
 		    uint32_t gtt_offset,
 		    void *gttp,
-		    uint32_t type)
+		    uint32_t rw_flag)	/* read = 0 write = 1 */
 {
-	agp_rw_gtt_t gtt_info;
+	agp_rw_gtt_t rw;
 	int ret, rval;
 
-	gtt_info.pgstart = gtt_offset / AGP_PAGE_SIZE;
-	gtt_info.pgcount = num_pages;
-	gtt_info.addr = gttp;
-	/* read = 0 write = 1 */
-	gtt_info.type = type;
+	rw.agprw_pgstart = gtt_offset / AGP_PAGE_SIZE;
+	rw.agprw_pgcount = num_pages;
+	rw.agprw_addr = gttp;
+	rw.agprw_flags = rw_flag;
+
 	ret = ldi_ioctl(dev->agp->agpgart_lh, AGPIOC_RW_GTT,
-	    (intptr_t)&gtt_info, FKIOCTL, kcred, &rval);
+	    (intptr_t)&rw, FKIOCTL, kcred, &rval);
 	if (ret) {
 		DRM_ERROR("AGPIOC_RW_GTT failed %d", ret);
 		return -ret;

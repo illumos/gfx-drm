@@ -184,7 +184,11 @@ ALL_DEFS	 = $(DEBUG_DEFS) $(OPTION_DEFS)
 #	DRV_KMODS_32 are built only 32-bit
 #	DRV_KMODS_64 are built only 64-bit
 #
-DRV_KMODS	+= foo
+DRV_KMODS	+= amd64_gart
+DRV_KMODS	+= agpgart
+DRV_KMODS	+= agptarget
+DRV_KMODS	+= drm
+DRV_KMODS	+= i915
 
 #
 # Common code drivers
@@ -226,7 +230,7 @@ SYS_KMODS	+=
 #	MISC_KMODS_32 are built only 32-bit
 #	MISC_KMODS_64 are built only 64-bit
 #
-MISC_KMODS	+=
+MISC_KMODS	+= agpmaster
 
 #
 #	Software Cryptographic Providers (/kernel/crypto):

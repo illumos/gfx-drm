@@ -87,6 +87,7 @@ $($(MACH)_ARCHITECTURES): $(PREREQ_TARGET) FRC
 # isomorphic locations.
 #
 COMMON_HDRDIRS= \
+		common/drm \
 		common/sys
 
 #

@@ -22,6 +22,11 @@
  * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  */
 
+/*
+ * Note: This header was copied from illumos-gate as a temporary meausre
+ * until illumos-gate installs this header in /usr/include for us. XXX
+ */
+
 #ifndef _DEVFSADM_H
 #define	_DEVFSADM_H
 

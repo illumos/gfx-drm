@@ -101,7 +101,7 @@ C99MODE			= $(C99_ENABLE)
 
 CFLAGS			+= $(CCVERBOSE)
 CFLAGS64		+= $(CCVERBOSE)
-CPPFLAGS		+= $($(MDBTGT)_TGTFLAGS) -I../../../common
+CPPFLAGS		+= $($(MDBTGT)_TGTFLAGS) -I../../../uts/common
 LDFLAGS			+= $(ZTEXT)
 LDFLAGS64		+= $(ZTEXT)
 ASFLAGS			+= -P

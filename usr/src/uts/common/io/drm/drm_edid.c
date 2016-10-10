@@ -2102,6 +2102,7 @@ static int drm_cvt_modes(struct drm_connector *connector,
 
 		height = (cvt->code[0] + ((cvt->code[1] & 0xf0) << 4) + 1) * 2;
 		switch (cvt->code[1] & 0x0c) {
+		default: /* else gcc says: width may be used uninitialized... */
 		case 0x00:
 			width = height * 4 / 3;
 			break;

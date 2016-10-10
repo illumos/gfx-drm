@@ -1164,6 +1164,8 @@ static irqreturn_t ivybridge_irq_handler(DRM_IRQ_ARGS)
 		sde_ier = I915_READ(SDEIER);
 		I915_WRITE(SDEIER, 0);
 		POSTING_READ(SDEIER);
+	} else {
+		sde_ier = 0; /* Fix GCC "used unitialized" warning */
 	}
 
 	/* On Haswell, also mask ERR_INT because we don't want to risk

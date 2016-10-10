@@ -18,31 +18,25 @@
 #
 # CDDL HEADER END
 #
-# Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
-# Use is subject to license terms.
-#
-# cmd/devfsadm/Makefile
-#
-
-include ../Makefile.cmd
 
 #
-# One for each ISA.
+# Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
 #
-SUBDIRS =	$(MACH)
 
-all	:=	TARGET= all
-install	:=	TARGET= install
-clean	:=	TARGET= clean
-clobber	:=	TARGET= clobber
-_msg	:=	TARGET= _msg
-lint	:=	TARGET= lint
-
-.KEEP_STATE:
-
-all install clean clobber lint _msg:	$(SUBDIRS)
-
-$(SUBDIRS):	FRC
-	@cd $@; pwd; $(MAKE) $(TARGET)
-
-FRC:
+set name=pkg.fmri value=pkg:/system/header/header-drm@$(PKGVERS)
+set name=pkg.description value="DRM Driver Header Files for x86 Workstations"
+set name=pkg.summary value="DRM Driver Header Files"
+set name=info.classification \
+    value=org.opensolaris.category.2008:Development/System
+set name=variant.arch value=i386
+dir path=usr group=sys
+dir path=usr/include
+dir path=usr/include/drm
+file path=usr/include/drm/drm.h
+file path=usr/include/drm/drm_fourcc.h
+file path=usr/include/drm/drm_mode.h
+file path=usr/include/drm/drm_os_solaris.h
+file path=usr/include/drm/drm_sarea.h
+file path=usr/include/drm/i915_drm.h
+license usr/src/uts/common/io/drm/LICENSE_DRM \
+    license=usr/src/uts/common/io/drm/LICENSE_DRM

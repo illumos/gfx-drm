@@ -751,7 +751,7 @@ i915_gem_do_execbuffer(struct drm_device *dev, void *data,
 	struct drm_clip_rect *cliprects = NULL;
 	struct intel_ring_buffer *ring;
 	u32 ctx_id = i915_execbuffer2_get_context_id(*args);
-	struct batch_info_list *node;
+	struct batch_info_list *node = NULL;
 	u32 exec_start, exec_len;
 	u32 mask, flags;
 	int ret, mode, i;
@@ -930,7 +930,11 @@ i915_gem_do_execbuffer(struct drm_device *dev, void *data,
 		obj->exec_entry = &exec[i];
 		eb_add_object(eb, obj);
 
-		if (MDB_TRACK_ENABLE)
+		/*
+		 * The condition here was: if (MDB_TRACK_ENABLE)...
+		 * but that caused GCC warnings.  This is equivalent.
+		 */
+		if (node != NULL)
 			node->obj_list[i] = (caddr_t)obj;
 		TRACE_GEM_OBJ_HISTORY(obj, "prepare emit");
 	}

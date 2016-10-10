@@ -23,10 +23,6 @@
 #
 
 LINK_OBJS_i386 = \
-	misc_link_i386.o \
-	xen_link.o
-
-xen_link.o xen_link.ln xen_link.po := CPPFLAGS += -I$(UTSBASE)/i86xpv
+	drm_link_i386.o
 
 include ../Makefile.com
-

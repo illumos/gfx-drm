@@ -559,14 +559,14 @@ void i915_ggtt_insert_entries(struct drm_i915_gem_object *obj,
 {
 	struct drm_device *dev = obj->base.dev;
 
-	unsigned int flags = (cache_level == I915_CACHE_NONE) ?
+	unsigned int agp_type = (cache_level == I915_CACHE_NONE) ?
 			AGP_USER_MEMORY : AGP_USER_CACHED_MEMORY;
 
 	(void) drm_agp_bind_pages(dev,
 				obj->base.pfnarray,
 				obj->base.size >> PAGE_SHIFT,
 				obj->gtt_offset,
-				flags);
+				agp_type);
 }
 
 static void i915_ggtt_clear_range(struct drm_device *dev,

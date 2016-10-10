@@ -237,6 +237,7 @@ drm_gem_map_access(devmap_cookie_t dhp, void *pvt, offset_t offset, size_t len,
 
 	obj = (struct drm_gem_object *)pvt;
 	if (obj == NULL) {
+		dev = NULL;	/* avoid "used uninitialized" warning */
 		goto next;
 	}
 
@@ -645,6 +646,9 @@ drm_sun_devmap(dev_t dev_id, devmap_cookie_t dhp, offset_t offset,
 
 	case _DRM_GEM:
 		return (__devmap_gem(dev, dhp, map, maplen));
+
+	default:
+		break;
 	}
 
 	return (ENOTSUP);
@@ -745,7 +749,7 @@ static struct modlmisc modlmisc = {
 };
 
 static struct modlinkage modlinkage = {
-	MODREV_1, (void *)&modlmisc, NULL
+	MODREV_1, { (void *)&modlmisc, NULL }
 };
 
 int

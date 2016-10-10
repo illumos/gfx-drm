@@ -256,6 +256,8 @@ DIRS= \
 	/usr/share/man/man1 \
 	/usr/share/man/man3x \
 	/usr/share/man/man7 \
+	/usr/share/man/man7d \
+	/usr/share/man/man7i \
 	/usr/share/src \
 	/usr/snadm \
 	/usr/snadm/lib \

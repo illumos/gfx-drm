@@ -25,8 +25,6 @@
 #
 
 #
-# uts/intel/drm/Makefile
-#
 #	This makefile drives the production of i915 graphics device driver,
 #	which supports the DRI (Direct Rendering Infrastructure), with the help
 #	of drm common misc module.
@@ -35,7 +33,7 @@
 #
 #	Path to the base of the uts directory tree (usually /usr/src/uts).
 #
-UTSBASE = ../..
+UTSBASE	= ../..
 
 #
 #	Define the module and object file sets.
@@ -45,22 +43,27 @@ OBJECTS		= $(I915_OBJS:%=$(OBJS_DIR)/%)
 LINTS		= $(I915_OBJS:%.o=$(LINTS_DIR)/%.ln)
 ROOTMODULE	= $(ROOT_DRV_DIR)/$(MODULE)
 
-# i915 driver depends on drm, agpmaster and gfx_private misc modules
-INC_PATH        += -I$(UTSBASE)/intel/io/drm -I$(UTSBASE)/common/io/drm
+CMN_DRM		= $(UTSBASE)/common/drm
 
-#
-#	dependency
-LDFLAGS	+= -dy -Nmisc/drm
+# Includes
+INC_PATH	+= -I$(CMN_DRM)
+
+# Dependency
+LDFLAGS		+= -dy -Nmisc/drm
 
 #
 #	Include common rules.
 #
 include $(UTSBASE)/intel/Makefile.intel
+include $(UTSBASE)/intel/io/i915/Makefile.mod
 
-CERRWARN	+= -_gcc=-Wno-unused-label
+CERRWARN	+= -_gcc=-Wno-parentheses
+CERRWARN	+= -_gcc=-Wno-unused-function
+CERRWARN	+= -_gcc=-Wno-unused-variable
+CERRWARN	+= -_gcc=-Wno-override-init
 
 #
-#	Re-define targets
+#	Define targets
 #
 ALL_TARGET	= $(BINARY)
 LINT_TARGET	= $(MODULE).lint
@@ -86,6 +89,13 @@ modlintlib:	$(MODLINTLIB_DEPS)
 clean.lint:	$(CLEAN_LINT_DEPS)
 
 install:	$(INSTALL_DEPS)
+
+$(OBJS_DIR)/%.o:		$(UTSBASE)/intel/io/i915/%.c
+	$(COMPILE.c) -o $@ $<
+	$(CTFCONVERT_O)
+
+$(LINTS_DIR)/%.ln:		$(UTSBASE)/intel/io/i915/%.c
+	@($(LHEAD) $(LINT.c) $< $(LTAIL))
 
 #
 #	Include common targets.
