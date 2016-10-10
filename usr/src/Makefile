@@ -81,7 +81,7 @@ check :=		TARGET= check
 #	cd pkg and do a 'make install'
 #
 
-all: sgs .WAIT $(SUBDIRS) pkg
+all: mapfiles sgs .WAIT $(SUBDIRS) pkg
 
 #
 # The _msg build is a two-step process.  First, the _msg dependency
@@ -102,7 +102,7 @@ install: install1 install2 _msg stage-licenses
 stage-licenses: install2
 	@cd pkg; pwd; $(MAKE) stage-licenses
 
-install1: sgs
+install1: mapfiles sgs
 
 install2: install1 $(SUBDIRS)
 
@@ -111,12 +111,15 @@ _msg: _msgdirs rootdirs FRC
 		cd $$m; pwd; $(MAKE) _msg; cd ..; \
 	done
 
+mapfiles: bldtools
+	@cd common/mapfiles/common; pwd; $(MAKE) install
+
 clean: $(SUBDIRS) head pkg
 clobber: $(SUBDIRS) head pkg clobber_local
 clobber_local:
 	@cd tools; pwd; $(MAKE) clobber
-	@cd common/mapfiles; pwd; $(MAKE) clobber
-	@cd msg; pwd; $(MAKE) clobber
+	@cd common/mapfiles/common; pwd; $(MAKE) clobber
+#	@cd msg; pwd; $(MAKE) clobber
 
 # no closedbins here
 
@@ -132,7 +135,7 @@ sgs: rootdirs .WAIT sysheaders userheaders .WAIT \
 # Top-level setup target to setup the development environment that includes
 # headers, tools and generated mapfiles.
 #
-setup:  bldtools sgs
+setup:  bldtools sgs mapfiles
 
 bldtools:
 	@cd tools; pwd; $(MAKE) install

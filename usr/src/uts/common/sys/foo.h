@@ -13,9 +13,24 @@
  * Copyright 2014 Nexenta Systems, Inc.  All rights reserved.
  */
 
+#ifndef _SYS_FOO_H
+#define	_SYS_FOO_H
+
+#include <sys/types.h>
+
+#ifdef	__cplusplus
+extern "C" {
+#endif
+
 #define	FOO_IOC_GETCNT	1
 typedef uint32_t foocnt_t;
 
 #ifndef	_KERNEL
 extern int foo_getcnt(uint32_t *);
 #endif
+
+#ifdef	__cplusplus
+}
+#endif
+
+#endif /* _SYS_FOO_H */

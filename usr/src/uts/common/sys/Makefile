@@ -40,11 +40,38 @@ sparc_HDRS=
 # Generated headers
 GENHDRS=
 
-CHKHDRS=
+# Normal headers
+CHKHDRS= \
+	foo.h
 
-HDRS=				\
-	$(GENHDRS)		\
-	$(CHKHDRS)
+HDRS=	$(GENHDRS) $(CHKHDRS)
+
+# from Makefile.syshdrs
+ROOTDIR=	$(ROOT)/usr/include/sys
+sparc_ROOTDIRS=
+i386_ROOTDIRS=
+sparc_ROOTHDRS=
+i386_ROOTHDRS=
+
+ROOTDIRS=			\
+	$(ROOTDIR)		\
+	$($(MACH)_ROOTDIRS)
+
+ROOTHDRS=				\
+	$($(MACH)_HDRS:%=$(ROOTDIR)/%)	\
+	$(HDRS:%=$(ROOTDIR)/%)
+
+$(ROOTDIR)/%: %
+	$(INS.file)
+
+$(ROOTDIRS):
+	$(INS.dir)
+
+#end Makefile.syshdrs
+
+CHECKHDRS= \
+	$($(MACH)_HDRS:%.h=%.check) \
+	$(CHKHDRS:%.h=%.check)
 
 all_h: $(GENHDRS)
 
@@ -52,6 +79,7 @@ install_h:			\
 	$(ROOTDIRS)		\
 	.WAIT			\
 	$(ROOTHDRS)		\
+	$($(MACH)_ROOTHDRS)
 
 clean:
 	$(RM) $(GENHDRS)
@@ -61,4 +89,3 @@ clobber:	clean
 check:	$(CHECKHDRS)
 
 FRC:
-
