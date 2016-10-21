@@ -51,11 +51,11 @@ install_h	:=	TARGET= install_h
 
 .PARALLEL:	$(PARALLEL_KMODS) $(XMODS) $(LINT_DEPS)
 
-def all install clean clobber modlist: genunix .WAIT $(KMODS) $(XMODS)
+def all install clean clobber modlist: $(KMODS) $(XMODS)
 
 modlintlib clean.lint: $(LINT_KMODS) $(XMODS)
 
-genunix $(KMODS) $(SUBDIRS):	FRC
+$(KMODS) $(SUBDIRS):	FRC
 	@cd $@; pwd; $(MAKE) $(NO_STATE) $(TARGET)
 
 $(XMODS):	FRC
