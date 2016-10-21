@@ -175,6 +175,10 @@ XRINCDIRS = uts/common head ucbhead
 cscope.out tags: FRC
 	$(XREF) -f -x $@
 
+TAGS: FRC
+	find uts common lib cmd -name '*.[ch]' -print |\
+	exctags -e -L - 
+
 FRC:
 
 #
