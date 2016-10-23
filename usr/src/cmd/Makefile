@@ -25,18 +25,7 @@
 include ../Makefile.master
 
 #
-#	Note that the commands 'agents', 'lp', 'perl', and 'man' are first in
-#	the list, violating alphabetical order.  This is because they are very
-#	long-running and should be given the most wall-clock time for a
-#	parallel build.
-#
-#	Commands in the FIRST_SUBDIRS list are built before starting the build
-#	of other commands.  Currently this includes only 'isaexec' and
-#	'platexec'.  This is necessary because $(ROOT)/usr/lib/isaexec or
-#	$(ROOT)/usr/lib/platexec must exist when some other commands are built
-#	because their 'make install' creates a hard link to one of them.
-#
-#	Commands are listed one per line so that TeamWare can auto-merge most
+#	Commands are listed one per line so that SCM systems can auto-merge most
 #	changes.
 #
 
@@ -44,7 +33,8 @@ FIRST_SUBDIRS=
 
 COMMON_SUBDIRS=		\
 	foo \
-	fs.d
+	fs.d \
+	mdb
 
 i386_SUBDIRS=
 

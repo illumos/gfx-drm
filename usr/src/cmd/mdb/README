@@ -1,0 +1,19 @@
+
+This directory flattens some of what would be found under
+$SRC/cmd/mdb in illumos-gate, where the Makefile.* here
+are from a couple different levels in illumos gate:
+  cmd/mdb, cmd/mdb/intel, cmd/mdb/sparc
+
+The subdirectories under here are somewhat like:
+  cmd/mdb/intel/modules/*
+  cmd/mdb/intel/{ia32,amd64}
+  cmd/mdb/sparc/{v7,v9}
+
+Didn't want to replicate that whole hierarchy just to
+build some mdb modules.
+
+To add a typical intel mdb/kmdb module, you would create:
+  mymod/Makefile
+  mymod/mymod.c
+  mymod/amd64/Makefile
+  mymod/ia32/Makefile
