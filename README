@@ -10,17 +10,15 @@ As provided, this skeleton builds one driver, one library,
 and one command, all named "foo".  These are intentionally
 trivial objects, just to demonstrate how it builds.
 
-The developer script quickbuild builds everything here.
-If you copy quickbuild into a full illumos workspace
-after integrating what you prototype in this skeleton,
-then quickbuild will do a "partial build" for you.
-(Quickly build just these components.)
-
-This does not do any package building (no IPS, no SysV).
-The quickbuild script can create a tarball that you can
-copy to a test machine and unpack there as a quick way
-to "install".
-
+The Makefile here is a wrappter to build the whole gate
+in a few separate steps.  All steps use the command:
+	bldenv myenv.sh "cd ...; make"
+to setup the environment expected by the gate and
+run make in the necessary places to build it all.
+The rapper makefile supports three targets:
+	make install
+	make package
+	make clean
 
 Here is a list of all the places you might want to copy
 to add another driver, library, or command:
@@ -44,5 +42,3 @@ to add another driver, library, or command:
 	man/man1/foo.1
 	man/man3x/libfoo.3x
 	man/man7/foo.7
-
-	quickbuild
