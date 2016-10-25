@@ -56,14 +56,8 @@ UNIX_O		 = $(UNIX_DIR)/$(OBJS_DIR)/unix.o
 MODSTUBS_O	 = $(MODSTUBS_DIR)/$(OBJS_DIR)/modstubs.o
 GENLIB		 = $(UTSBASE)/sun4u/lint-libs/$(OBJS_DIR)/libgenunix.so
 
-LINT_LIB_32	 = $(UTSBASE)/sun4u/lint-libs/$(OBJS_DIR)/llib-lunix.ln
-GEN_LINT_LIB_32	 = $(UTSBASE)/sun4u/lint-libs/$(OBJS_DIR)/llib-lgenunix.ln
-
-LINT_LIB_64	 = $(UTSBASE)/sun4u/lint-libs/$(OBJS_DIR)/llib-lunix.ln
-GEN_LINT_LIB_64	 = $(UTSBASE)/sun4u/lint-libs/$(OBJS_DIR)/llib-lgenunix.ln
-
-LINT_LIB	 = $(LINT_LIB_$(CLASS))
-GEN_LINT_LIB	 = $(GEN_LINT_LIB_$(CLASS))
+LINT_LIB	 = # was llib-lunix.ln
+GEN_LINT_LIB	 = # was llib-lgenunix.ln
 
 LINT32_DIRS	 = $(LINT32_BUILDS:%=$(UTSBASE)/sparc/lint-libs/%)
 LINT32_FILES	 = $(LINT32_DIRS:%=%/llib-l$(MODULE).ln)
@@ -278,12 +272,3 @@ SOCKET_KMODS	+=
 #	kiconv modules (/kernel/kiconv):
 #
 KICONV_KMODS	+=
-
-
-#
-# Ensure that the variable member of the cpu_t (cpu_m) is defined
-# for the lint builds so as not to cause lint errors during the
-# global cross check.
-#
-$(LINTFLAGSUPPRESS)LINTFLAGS	+= -D_MACHDEP -I$(UTSBASE)/sun4 \
-				   -I$(UTSBASE)/sun4u -I$(UTSBASE)/sfmmu

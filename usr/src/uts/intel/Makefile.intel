@@ -56,8 +56,8 @@ LINT_LIB_DIR	 = $(UTSBASE)/intel/lint-libs/$(OBJS_DIR)
 UNIX_O		 = $(UNIX_DIR)/$(OBJS_DIR)/unix.o
 GENLIB		 = $(GENLIB_DIR)/$(OBJS_DIR)/libgenunix.so
 MODSTUBS_O	 = $(MODSTUBS_DIR)/$(OBJS_DIR)/modstubs.o
-LINT_LIB	 = $(UTSBASE)/i86pc/lint-libs/$(OBJS_DIR)/llib-lunix.ln
-GEN_LINT_LIB	 = $(UTSBASE)/intel/lint-libs/$(OBJS_DIR)/llib-lgenunix.ln
+LINT_LIB	 = # was llib-lunix.ln
+GEN_LINT_LIB	 = # was llib-lgenunix.ln
 
 #
 #	Include the makefiles which define build rule templates, the
@@ -271,10 +271,3 @@ KICONV_KMODS	+=
 #	'Dacf' Modules (/kernel/dacf):
 #
 DACF_KMODS	+=
-
-#
-# Ensure that the variable member of the cpu_t (cpu_m) is defined
-# for the lint builds so as not to cause lint errors during the
-# global cross check.
-#
-LINTFLAGS	+= -D_MACHDEP -I$(UTSBASE)/i86pc

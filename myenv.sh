@@ -70,6 +70,7 @@ export PKGFMT_OUTPUT='v1'
 export CW_NO_SHADOW='1'
 
 # Build tools - don't change these unless you know what you're doing.
+export BUILD_TOOLS=/opt
 export ONBLD_TOOLS=/opt/onbld
 
 # see usr/src/pkg
