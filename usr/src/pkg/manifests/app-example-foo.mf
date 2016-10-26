@@ -36,6 +36,8 @@ dir path=usr/share/man/man7
 file path=kernel/drv/$(ARCH64)/foo
 $(i386_ONLY)file path=kernel/drv/foo
 file path=kernel/drv/foo.conf
+file path=kernel/kmdb/$(ARCH64)/foo
+$(i386_ONLY)file path=kernel/kmdb/foo
 file path=usr/bin/foo mode=0555
 file path=usr/include/libfoo/foo.h
 file path=usr/lib/$(ARCH64)/libfoo.so.1
@@ -43,6 +45,8 @@ file path=usr/lib/$(ARCH64)/llib-lfoo.ln
 file path=usr/lib/libfoo.so.1
 file path=usr/lib/llib-lfoo
 file path=usr/lib/llib-lfoo.ln
+file path=usr/lib/mdb/kvm/amd64/fo.so
+file path=usr/lib/mdb/kvm/foo.so
 file path=usr/share/man/man1/foo.1
 file path=usr/share/man/man3x/foo.3x
 file path=usr/share/man/man7/foo.7

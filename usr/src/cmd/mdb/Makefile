@@ -29,7 +29,7 @@ include $(SRC)/Makefile.master
 .KEEP_STATE:
 
 sparc_SUBDIRS =
-i386_SUBDIRS =
+i386_SUBDIRS = foo
 
 SUBDIRS = $($(MACH)_SUBDIRS)
 TARGET =
