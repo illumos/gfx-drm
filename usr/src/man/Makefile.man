@@ -19,6 +19,20 @@ ROOTMAN=	$(ROOT)/usr/share/man
 ROOTHASMAN=	$(ROOT)/usr/has/man
 FILEMODE=	0444
 
+# or: http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl
+MANPAGES_STYLESHEET = /usr/share/sgml/docbook/xsl-stylesheets/manpages/docbook.xsl
+
+XSLTPROC_FLAGS = \
+	--stringparam man.authors.section.enabled 0 \
+	--stringparam man.copyright.section.enabled 0 \
+	--stringparam funcsynopsis.style ansi \
+	--stringparam man.output.quietly 1 \
+	--nonet \
+	$(MANPAGES_STYLESHEET)
+
+XSLTPROC_PROCESS_MAN = \
+	$(XSLTPROC) -o "$@" $(XSLTPROC_FLAGS) "$<"
+
 # The manual section being built, client Makefiles must set this to, for e.g.
 # "3perl", with case matching that of the section name as installed.
 #
@@ -55,7 +69,7 @@ check:		$(MANCHECKS)
 clean:
 
 clobber:
-		$(RM) $(MANLINKS)
+		$(RM) $(MANLINKS) $(CLOBBERFILES)
 
 .PARALLEL:
 

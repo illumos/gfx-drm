@@ -92,19 +92,32 @@ diff_ref omap -name '*.c' > $chk/omap.patch
 echo patches/rpath-pc.in.patch
 diff_ref . -name '*.pc.in' > $chk/rpath-pc.in.patch
 
-# Everything else is in...
-echo patches/solaris-drm-port.patch
-( head -27 patches/solaris-drm-port.patch ;
-  ( cd $dir && find . -name '*.[ch]' -print) |
-  sed -e 's:^./::' | sort |
-  egrep -v '^(etnaviv|exynos|freedreno|intel|omap|tests/exynos)' |
-  while read f
-  do
-    cmp -s $ref/$f $dir/$f || {
-      echo diff ... $dir/$f
-      diff -u $ref/$f $dir/$f
-    }
-  done
-) > $chk/solaris-drm-port.patch
+echo patches/incl-drm-drm-h.patch
+( head -27 patches/incl-drm-drm-h.patch ;
+  diff_ref include/drm/drm.h ) > $chk/incl-drm-drm-h.patch
+
+echo patches/incl-drm-i915-drm-h.patch
+( head -27 patches/incl-drm-i915-drm-h.patch ;
+  diff_ref include/drm/i915_drm.h ) > $chk/incl-drm-i915-drm-h.patch
+
+echo patches/libdrm-lists-h.patch
+diff_ref libdrm_lists.h > $chk/libdrm-lists-h.patch
+
+echo patches/util-double-list-h.patch
+diff_ref util_double_list.h > $chk/util-double-list-h.patch
+
+echo patches/util-math-h.patch
+diff_ref util_math.h > $chk/util-math-h.patch
+
+echo patches/xf86drm-c.patch
+diff_ref xf86drm.c > $chk/xf86drm-c.patch
+
+echo patches/xf86drm-h.patch
+( head -27 patches/xf86drm-h.patch ;
+  diff_ref xf86drm.h ) > $chk/xf86drm-h.patch
+
+echo patches/xf86drmMode-c.patch
+diff_ref xf86drmMode.c > $chk/xf86drmMode-c.patch
+
 
 diff -r patches $chk

@@ -21,7 +21,9 @@ include $(SRC)/Makefile.master
 
 FETCH=	$(SRC)/tools/userland-fetch
 
+# See also: ./Makefile.drm LIBDRM_VERS
 LIBDRM_VERS=2.4.71
+
 LIBDRM_DIR=libdrm-$(LIBDRM_VERS)
 LIBDRM_ARCHIVE=$(LIBDRM_DIR).tar.bz2
 LIBDRM_URL=http://dri.freedesktop.org/libdrm/$(LIBDRM_ARCHIVE)

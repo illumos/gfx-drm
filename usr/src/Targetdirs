@@ -213,6 +213,8 @@ DIRS= \
 	/usr/lib/mdb/kvm \
 	/usr/lib/mdb/proc \
 	/usr/lib/nfs \
+	/usr/lib/pkgconfig \
+	/usr/lib/xorg \
 	/usr/net \
 	/usr/net/servers \
 	/usr/lib/pool \
@@ -332,6 +334,8 @@ DIRS64= \
 	/usr/ccs/lib/$(MACH64) \
 	/usr/lib/$(MACH64) \
 	/usr/lib/$(MACH64)/gss \
+	/usr/lib/$(MACH64)/pkgconfig \
+	/usr/lib/abi/$(MACH64) \
 	/usr/lib/brand/sn1/$(MACH64) \
 	/usr/lib/brand/solaris10/$(MACH64) \
 	/usr/lib/elfedit/$(MACH64) \
@@ -351,7 +355,7 @@ DIRS64= \
 	/usr/lib/secure/$(MACH64) \
 	/usr/lib/security/$(MACH64) \
 	/usr/lib/smbsrv/$(MACH64) \
-	/usr/lib/abi/$(MACH64) \
+	/usr/lib/xorg/$(MACH64) \
 	/usr/sbin/$(MACH64) \
 	/usr/ucb/$(MACH64) \
 	/usr/ucblib/$(MACH64) \

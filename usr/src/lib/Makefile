@@ -48,7 +48,16 @@ SUBDIRS= \
 	libfoo	\
 	$($(MACH)_SUBDIRS)
 
-i386_SUBDIRS=
+i386_SUBDIRS= \
+	libdrm .WAIT \
+	libkms \
+	libdrm_intel \
+	libdrm_amdgpu \
+	libdrm_exynos \
+	libdrm_freedreno \
+	libdrm_omap \
+	libdrm_radeon \
+	libdrm_tegra
 
 sparc_SUBDIRS=
 

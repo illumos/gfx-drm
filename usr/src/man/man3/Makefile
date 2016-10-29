@@ -15,22 +15,15 @@
 
 include		$(SRC)/Makefile.master
 
-MANSECT= 	7
+MANSECT= 	3
 
 # generated man pages
-GENMANS= \
-	drm.7 \
-	drm-kms.7 \
-	drm-memory.7
+GENMAN= \
+		drmAvailable.3 \
+		drmHandleEvent.3 \
+		drmModeGetResources.3
 
-LINKSRC= drm-memory.7
-GENLINKS= \
-	drm-mm.7 \
-	drm-gem.7 \
-	drm-ttm.7
-
-MANFILES= 	foo.7 \
-		$(GENMANS)
+MANFILES= $(GENMAN)
 MANLINKS=
 
 .KEEP_STATE:
@@ -38,13 +31,7 @@ MANLINKS=
 include		$(SRC)/man/Makefile.man
 include		$(SRC)/common/libdrm/Makefile.drm
 
-ROOTGENLINKS=	$(GENLINKS:%=$(ROOTMAN)/man$(MANSECT)/%)
+install:	$(ROOTMANFILES) $(ROOTMANLINKS)
 
-install:	$(ROOTMANFILES) $(ROOTMANLINKS) $(ROOTGENLINKS)
-
-$(ROOTMAN)/man7/%.7 : $(LIBDRM_CMN_DIR)/man/%.xml
+$(ROOTMAN)/man3/%.3 : $(LIBDRM_CMN_DIR)/man/%.xml
 	$(XSLTPROC_PROCESS_MAN)
-
-
-$(ROOTGENLINKS):
-		$(RM) $@; $(SYMLINK) $(LINKSRC) $@

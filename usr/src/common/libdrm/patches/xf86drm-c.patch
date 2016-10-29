@@ -1,0 +1,12 @@
+diff ... b/xf86drm.c
+--- a/xf86drm.c	Fri Mar 20 07:05:48 2015
++++ b/xf86drm.c	Fri Mar 20 07:06:10 2015
+@@ -1108,7 +1108,7 @@
+     drm_map_t map;
+ 
+     memclear(map);
+-    map.handle = (void *)(uintptr_t)handle;
++    map.handle = (drm_handle_t)(uintptr_t)handle;
+ 
+     if(drmIoctl(fd, DRM_IOCTL_RM_MAP, &map))
+         return -errno;

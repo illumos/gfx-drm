@@ -1,0 +1,40 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2016 Gordon W. Ross
+#
+
+# This make include is used in $SRC/lib/libdrm/*
+#
+# See also: ./Makefile LIBDRM_VERS
+LIBDRM_VERS=2.4.71
+
+LIBDRM_CMN_DIR=$(SRC)/common/libdrm/libdrm-$(LIBDRM_VERS)
+
+ROOTLIBDIR =	$(ROOT)/usr/lib/xorg
+ROOTLIBDIR64 =	$(ROOT)/usr/lib/xorg/$(MACH64)
+
+CPPFLAGS +=	-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
+
+# Defines that would normally come from autoconf.  ook through
+# libdrm-$(LIBDRM_VERS)/config.h.in when updating libdrm to
+# check for new ones we might need to define.
+CPPFLAGS +=	-DHAVE_ALLOCA_H
+CPPFLAGS +=	-DMAJOR_IN_MKDEV
+
+# Additional CPPFLAG defines in:
+#  $SRC/cmd/drm-tests/util  HAVE_CAIRO
+#  $SRC/lib/libkms  HAVE_INTEL (_VMWGFX,_NOUVEAU,_RADEON,_EXYNOS)
+
+CPPFLAGS +=	-I$(SRC)/uts/common \
+		-I$(SRC)/uts/common/drm \
+		-I$(LIBDRM_CMN_DIR)/include/drm
