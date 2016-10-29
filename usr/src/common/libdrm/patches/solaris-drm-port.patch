@@ -25,6 +25,17 @@
 # or other dealings in this Software without prior written authorization
 # of the copyright holder.
 
+diff ... libdrm-2.4.64/amdgpu/amdgpu_cs.c
+--- libdrm-2.4.64/amdgpu/amdgpu_cs.c.~1~	2015-09-14 10:42:37.518409301 +0300
++++ libdrm-2.4.64/amdgpu/amdgpu_cs.c	2015-09-14 10:42:52.951974725 +0300
+@@ -25,6 +25,7 @@
+ #include "config.h"
+ #endif
+ 
++#include <alloca.h>
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <string.h>
 diff --git a/include/drm/drm.h b/include/drm/drm.h
 index 8adb9d5..f9bedd0 100644
 --- a/include/drm/drm.h	2016-04-28 03:44:16.000000000 +0300
@@ -66,7 +77,17 @@ index 8adb9d5..f9bedd0 100644
  #define DRM_NAME	"drm"	  /**< Name in kernel, /dev, and /proc */
  #define DRM_MIN_ORDER	5	  /**< At least 2^5 bytes = 32 bytes */
  #define DRM_MAX_ORDER	22	  /**< Up to 2^22 bytes = 4MB */
-@@ -210,12 +236,13 @@
+@@ -181,7 +207,8 @@
+ 	_DRM_SHM = 2,		  /**< shared, cached */
+ 	_DRM_AGP = 3,		  /**< AGP/GART */
+ 	_DRM_SCATTER_GATHER = 4,  /**< Scatter/gather memory for PCI DMA */
+-	_DRM_CONSISTENT = 5	  /**< Consistent memory for PCI DMA */
++	_DRM_CONSISTENT = 5,	  /**< Consistent memory for PCI DMA */
++	_DRM_GEM = 6		  /**< GEM object (XXX: Not libdrm?) */
+ };
+ 
+ /**
+@@ -210,12 +237,13 @@
   * \sa drmAddMap().
   */
  struct drm_map {
@@ -83,7 +104,7 @@ index 8adb9d5..f9bedd0 100644
  	int mtrr;		 /**< MTRR slot used */
  	/*   Private data */
  };
-@@ -322,18 +349,22 @@
+@@ -322,18 +350,22 @@
   *
   * \sa drmAddBufs().
   */
@@ -113,7 +134,7 @@ index 8adb9d5..f9bedd0 100644
  	unsigned long agp_start; /**<
  				  * Start address of where the AGP buffers are
  				  * in the AGP aperture
-@@ -379,6 +410,7 @@
+@@ -379,6 +411,7 @@
  	void *virtual;		/**< Mmap'd area in user-virtual */
  #endif
  	struct drm_buf_pub *list;	/**< Buffer information */
@@ -121,9 +142,10 @@ index 8adb9d5..f9bedd0 100644
  };
  
  /**
+diff ... b/include/drm/i915_drm.h
 --- a/include/drm/i915_drm.h
 +++ b/include/drm/i915_drm.h
-@@ -75,6 +75,7 @@ typedef struct _drm_i915_sarea {
+@@ -100,6 +100,7 @@
  	int pf_current_page;	/* which buffer is being displayed? */
  	int perf_boxes;		/* performance boxes to be displayed */
  	int width, height;      /* screen size in pixels */
@@ -131,7 +153,7 @@ index 8adb9d5..f9bedd0 100644
  
  	drm_handle_t front_handle;
  	int front_offset;
-@@ -114,6 +115,8 @@ typedef struct _drm_i915_sarea {
+@@ -139,6 +140,8 @@
  	int pipeB_w;
  	int pipeB_h;
  
@@ -140,6 +162,75 @@ index 8adb9d5..f9bedd0 100644
  	/* fill out some space for old userspace triple buffer */
  	drm_handle_t unused_handle;
  	__u32 unused1, unused2, unused3;
+@@ -296,6 +299,15 @@
+ 	struct drm_clip_rect *cliprects;	/* pointer to userspace cliprects */
+ } drm_i915_batchbuffer_t;
+ 
++typedef struct drm_i915_batchbuffer32 {
++	int start;		/* agp offset */
++	int used;		/* nr bytes in use */
++	int DR1;		/* hw flags for GFX_OP_DRAWRECT_INFO */
++	int DR4;		/* window origin for GFX_OP_DRAWRECT_INFO */
++	int num_cliprects;	/* mulitpass with multiple cliprects? */
++	caddr32_t cliprects;	/* pointer to userspace cliprects */
++} drm_i915_batchbuffer32_t;
++
+ /* As above, but pass a pointer to userspace buffer which can be
+  * validated by the kernel prior to sending to hardware.
+  */
+@@ -308,6 +320,15 @@
+ 	struct drm_clip_rect *cliprects;	/* pointer to userspace cliprects */
+ } drm_i915_cmdbuffer_t;
+ 
++typedef struct drm_i915_cmdbuffer32 {
++	caddr32_t buf;	/* pointer to userspace command buffer */
++	int sz;			/* nr bytes in buf */
++	int DR1;		/* hw flags for GFX_OP_DRAWRECT_INFO */
++	int DR4;		/* window origin for GFX_OP_DRAWRECT_INFO */
++	int num_cliprects;	/* mulitpass with multiple cliprects? */
++	caddr32_t cliprects;	/* pointer to userspace cliprects */
++} drm_i915_cmdbuffer32_t;
++
+ /* Userspace can request & wait on irq's:
+  */
+ typedef struct drm_i915_irq_emit {
+@@ -314,6 +335,10 @@
+ 	int *irq_seq;
+ } drm_i915_irq_emit_t;
+ 
++typedef struct drm_i915_irq_emit32 {
++	caddr32_t irq_seq;
++} drm_i915_irq_emit32_t;
++
+ typedef struct drm_i915_irq_wait {
+ 	int irq_seq;
+ } drm_i915_irq_wait_t;
+@@ -369,6 +394,11 @@
+ 	int *value;
+ } drm_i915_getparam_t;
+ 
++typedef struct drm_i915_getparam32 {
++	int param;
++	caddr32_t value;
++} drm_i915_getparam32_t;
++
+ /* Ioctl to set kernel params:
+  */
+ #define I915_SETPARAM_USE_MI_BATCHBUFFER_START            1
+@@ -392,6 +422,13 @@
+ 	int *region_offset;	/* offset from start of fb or agp */
+ } drm_i915_mem_alloc_t;
+ 
++typedef struct drm_i915_mem_alloc32 {
++	int region;
++	int alignment;
++	int size;
++	caddr32_t region_offset;	/* offset from start of fb or agp */
++} drm_i915_mem_alloc32_t;
++
+ typedef struct drm_i915_mem_free {
+ 	int region;
+ 	int region_offset;
 diff --git a/libkms/linux.c b/libkms/linux.c
 index fc4f205..5d66fc7 100644
 --- libdrm-2.4.64/libkms/linux.c.~1~	2015-09-14 10:39:04.176885400 +0300
@@ -150,13 +241,25 @@ index fc4f205..5d66fc7 100644
  #include <sys/stat.h>
 +#include <sys/sysmacros.h>
  #include <sys/types.h>
- #ifdef HAVE_SYS_MKDEV_H
+ #ifdef MAJOR_IN_MKDEV
  #include <sys/mkdev.h>
+diff ... b/xf86drm.c
+--- a/xf86drm.c	Fri Mar 20 07:05:48 2015
++++ b/xf86drm.c	Fri Mar 20 07:06:10 2015
+@@ -1108,7 +1108,7 @@
+     drm_map_t map;
+ 
+     memclear(map);
+-    map.handle = (void *)(uintptr_t)handle;
++    map.handle = (drm_handle_t)(uintptr_t)handle;
+ 
+     if(drmIoctl(fd, DRM_IOCTL_RM_MAP, &map))
+         return -errno;
 diff --git a/xf86drm.h b/xf86drm.h
 index 76eb94e..6a14120 100644
 --- a/xf86drm.h
 +++ b/xf86drm.h
-@@ -458,6 +458,17 @@ do {	register unsigned int __old __asm("o0");		\
+@@ -472,6 +472,17 @@
  #endif /* architecture */
  #endif /* __GNUC__ >= 2 */
  
@@ -178,7 +281,7 @@ diff --git a/xf86drmMode.c b/xf86drmMode.c
 index c809c44..715f23a 100644
 --- libdrm-2.4.64/xf86drmMode.c.~1~	2015-09-14 10:33:51.340507095 +0300
 +++ libdrm-2.4.64/xf86drmMode.c	2015-09-14 10:36:09.881744836 +0300
-@@ -834,7 +834,9 @@
+@@ -850,7 +850,9 @@
  	drmClose(fd);
  	return 0;
  #endif
@@ -189,24 +292,3 @@ index c809c44..715f23a 100644
  }
  
  int drmModeCrtcGetGamma(int fd, uint32_t crtc_id, uint32_t size,
---- a/xf86drm.c	Fri Mar 20 07:05:48 2015
-+++ b/xf86drm.c	Fri Mar 20 07:06:10 2015
-@@ -1105,7 +1105,7 @@
-     drm_map_t map;
- 
-     memclear(map);
--    map.handle = (void *)(uintptr_t)handle;
-+    map.handle = (drm_handle_t)(uintptr_t)handle;
- 
-     if(drmIoctl(fd, DRM_IOCTL_RM_MAP, &map))
- 	return -errno;
---- libdrm-2.4.64/amdgpu/amdgpu_cs.c.~1~	2015-09-14 10:42:37.518409301 +0300
-+++ libdrm-2.4.64/amdgpu/amdgpu_cs.c	2015-09-14 10:42:52.951974725 +0300
-@@ -25,6 +25,7 @@
- #include "config.h"
- #endif
- 
-+#include <alloca.h>
- #include <stdlib.h>
- #include <stdio.h>
- #include <string.h>

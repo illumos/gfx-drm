@@ -118,6 +118,7 @@ clean: $(SUBDIRS) head pkg
 clobber: $(SUBDIRS) head pkg clobber_local
 clobber_local:
 	@cd tools; pwd; $(MAKE) clobber
+	@cd common/libdrm; pwd; $(MAKE) clobber
 	@cd common/mapfiles/common; pwd; $(MAKE) clobber
 #	@cd msg; pwd; $(MAKE) clobber
 
@@ -153,6 +154,7 @@ $(ROOTDIRS) $(MSGDIRS):
 
 userheaders: FRC
 	@cd head; pwd; $(MAKE) install_h
+	@cd common/libdrm; pwd; $(MAKE) install_h
 
 libheaders: bldtools
 	@cd lib; pwd; $(MAKE) install_h
