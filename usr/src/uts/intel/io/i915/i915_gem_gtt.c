@@ -679,10 +679,11 @@ intel_enable_ppgtt(struct drm_device *dev)
 	return true;
 }
 
-void i915_gem_init_global_gtt(struct drm_device *dev)
+int i915_gem_init_global_gtt(struct drm_device *dev)
 {
 	struct drm_i915_private *dev_priv = dev->dev_private;
 	unsigned long gtt_size, mappable_size;
+	int ret;
 
 	gtt_size = dev_priv->gtt.total;
 	mappable_size = dev_priv->gtt.mappable_end;
@@ -697,18 +698,19 @@ void i915_gem_init_global_gtt(struct drm_device *dev)
 	}
 	i915_gem_setup_global_gtt(dev, 0, mappable_size, gtt_size);
 
-	setup_scratch_page(dev);
+	ret = setup_scratch_page(dev);
+	if (ret)
+		return ret;
 
 	if (intel_enable_ppgtt(dev) && HAS_ALIASING_PPGTT(dev)) {
-		int ret;
 		ret = i915_gem_init_aliasing_ppgtt(dev);
 		if (!ret)
-			return;
+			return 0;
 		DRM_ERROR("Aliased PPGTT setup failed %d\n", ret);
 		drm_mm_takedown(&dev_priv->mm.gtt_space);
 		gtt_size += I915_PPGTT_PD_ENTRIES*PAGE_SIZE;
 	}
-
+	return 0;
 }
 
 int setup_scratch_page(struct drm_device *dev)
@@ -718,8 +720,10 @@ int setup_scratch_page(struct drm_device *dev)
 
 	/* setup scratch page */
 	dev_priv->gtt.scratch_page = kzalloc(sizeof(struct drm_gem_object), GFP_KERNEL);
-	if (dev_priv->gtt.scratch_page == NULL)
+	if (dev_priv->gtt.scratch_page == NULL) {
+		DRM_ERROR("setup_scratch_page: gem object init failed");
 		return (-ENOMEM);
+	}
 
 	if (IS_G33(dev))
 		gen = 33;
@@ -728,6 +732,8 @@ int setup_scratch_page(struct drm_device *dev)
 
 	if (drm_gem_object_init(dev, dev_priv->gtt.scratch_page, DRM_PAGE_SIZE, gen) != 0) {
 		kmem_free(dev_priv->gtt.scratch_page, sizeof (struct drm_gem_object));
+		dev_priv->gtt.scratch_page = NULL;
+		DRM_ERROR("setup_scratch_page: gem object init failed");
 		return (-ENOMEM);
 	}
 	(void) memset(dev_priv->gtt.scratch_page->kaddr, 0, DRM_PAGE_SIZE);
@@ -738,6 +744,9 @@ int setup_scratch_page(struct drm_device *dev)
 void teardown_scratch_page(struct drm_device *dev)
 {
 	struct drm_i915_private *dev_priv = dev->dev_private;
+
+	if (dev_priv->gtt.scratch_page == NULL)
+		return;
 
 	drm_gem_object_release(dev_priv->gtt.scratch_page);
 	kmem_free(dev_priv->gtt.scratch_page, sizeof (struct drm_gem_object));
@@ -1160,18 +1169,28 @@ i915_clean_gtt(struct drm_device *dev, size_t offset)
 	struct drm_i915_private *dev_priv = dev->dev_private;
 	unsigned first_entry = offset >> PAGE_SHIFT;
 	unsigned num_entries = (dev_priv->gtt.total - offset - PAGE_SIZE) >> PAGE_SHIFT;
-	uint64_t scratch_page_addr = dev_priv->gtt.scratch_page->pfnarray[0] << PAGE_SHIFT;
+	pfn_t scratch_pfn = 0;
 	gtt_pte_t *gtt_addr, scratch_pte;
 	int i;
 
+	if (dev_priv->gtt.scratch_page != NULL)
+		scratch_pfn = dev_priv->gtt.scratch_page->pfnarray[0];
+
 	if (INTEL_INFO(dev)->gen <= 5) {
 		(void) drm_agp_unbind_pages(dev, NULL, num_entries,
-			offset, dev_priv->gtt.scratch_page->pfnarray[0] ,1);
+			offset, scratch_pfn, 1);
 	} else {
+		if (scratch_pfn != 0) {
+			uint64_t scratch_page_addr = scratch_pfn << PAGE_SHIFT;
+			scratch_pte = gen6_pte_encode(dev, scratch_page_addr, I915_CACHE_LLC);
+		} else {
+			/* No scratch page?  Use an invalid PTE. */
+			scratch_pte = 0;
+		}
+
 		for (i = first_entry ; i < ( first_entry + num_entries); i++) {
 			gtt_addr = (gtt_pte_t *)(uintptr_t)((caddr_t)dev_priv->gtt.virtual_gtt
 							+ i * sizeof(gtt_pte_t));
-			scratch_pte = gen6_pte_encode(dev, scratch_page_addr, I915_CACHE_LLC);
 			ddi_put32(dev_priv->gtt.gtt_mapping.acc_handle,
 					gtt_addr, scratch_pte);
 		}

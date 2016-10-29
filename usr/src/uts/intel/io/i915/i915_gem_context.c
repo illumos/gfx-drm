@@ -299,6 +299,14 @@ void i915_gem_context_fini(struct drm_device *dev)
 	 * other code, leading to spurious errors. */
 	intel_gpu_reset(dev);
 
+	/* Got a panic here with dctx=0 during reboot when Xorg was up.
+	 * So... apparentl the context_unreference might already have
+	 * happened when we get here?  Not sure how, but check...
+	 */
+	if (dctx == NULL) {
+		DRM_DEBUG_DRIVER("i915_gem_context_fini, dctx=0\n");
+		return;
+	}
 	i915_gem_object_unpin(dctx->obj);
 
 	/* When default context is created and switched to, base object refcount

@@ -1834,7 +1834,7 @@ void i915_gem_gtt_bind_object(struct drm_i915_gem_object *obj,
 				enum i915_cache_level cache_level);
 void i915_gem_gtt_unbind_object(struct drm_i915_gem_object *obj, uint32_t type);
 void i915_gem_gtt_finish_object(struct drm_i915_gem_object *obj);
-void i915_gem_init_global_gtt(struct drm_device *dev);
+int i915_gem_init_global_gtt(struct drm_device *dev);
 void i915_gem_setup_global_gtt(struct drm_device *dev, unsigned long start,
 			       unsigned long mappable_end, unsigned long end);
 int setup_scratch_page(struct drm_device *dev);

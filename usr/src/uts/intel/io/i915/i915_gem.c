@@ -3599,7 +3599,11 @@ int i915_gem_init(struct drm_device *dev)
 			DRM_DEBUG_DRIVER("allow wake ack timed out\n");
 	}
 
-	i915_gem_init_global_gtt(dev);
+	ret = i915_gem_init_global_gtt(dev);
+	if (ret) {
+		mutex_unlock(&dev->struct_mutex);
+		return ret;
+	}
 
 	size = drm_getfb_size(dev);
 	dev_priv->fbcon_obj = NULL;
