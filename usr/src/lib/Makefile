@@ -70,14 +70,6 @@ sparc_MSGSUBDIRS=
 
 i386_MSGSUBDIRS=
 
-HDRSUBDIRS=	\
-	libfoo	\
-	$($(MACH)_HDRSUBDIRS)
-
-i386_HDRSUBDIRS=
-
-sparc_HDRSUBDIRS=
-
 all :=		TARGET= all
 check :=	TARGET= check
 clean :=	TARGET= clean
@@ -97,7 +89,7 @@ install:		$(SUBDIRS)
 
 clean clobber lint:	$(NOWAIT_SUBDIRS)
 
-install_h check:	$(HDRSUBDIRS)
+install_h check:	$(SUBDIRS)
 
 _msg:			$(MSGSUBDIRS) .WAIT _dc
 
