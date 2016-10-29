@@ -22,6 +22,7 @@
  * Copyright 2010 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
  * Copyright 2012 Joyent, Inc.  All rights reserved.
+ * Copyright 2016 Gordon W. Ross
  */
 
 #include <regex.h>
@@ -33,8 +34,9 @@
 #include <ctype.h>
 
 /*
- * Note: separate from misc_link_i386.c because this will later
- * move to the gfx-drm gate.
+ * Handles device links for agp and drm drivers.
+ * Note that misc_link.c (in ON gate) handles minor "gfx"
+ * which gets linked as /dev/fbs/gfx0 -> ...:gfx0
  */
 
 static int agp_process(di_minor_t minor, di_node_t node);
@@ -98,8 +100,9 @@ static devfsadm_enumerate_t cpugart_rules[1] =
 	{ "^agp$/^cpugart([0-9]+)$", 1, MATCH_ALL };
 static devfsadm_enumerate_t agpmaster_rules[1] =
 	{ "^agp$/^agpmaster([0-9]+)$", 1, MATCH_ALL };
+
 static devfsadm_enumerate_t drm_rules[1] =
-	{ "^dri$/^card([0-9]+)$", 1, MATCH_ALL };
+	{ "^dri$/^([a-z]+D?)([0-9]+)$", 2, MATCH_MINOR };
 
 
 /*
@@ -118,7 +121,7 @@ static devfsadm_remove_t drm_remove_cbt[] = {
 	{ "agp", "^agp/cpugart[0-9]+$", RM_POST,
 		ILEVEL_0, devfsadm_rm_all
 	},
-	{ "drm", "^dri/card[0-9]+$", RM_POST,
+	{ "drm", "^dri/[a-z]D?[0-9]+$", RM_POST,
 		ILEVEL_0, devfsadm_rm_all
 	},
 };
@@ -253,9 +256,16 @@ static int
 drm_node(di_minor_t minor, di_node_t node)
 {
 	char *minor_nm, *drv_nm;
-	char *devfspath;
-	char *I_path, *p_path, *buf;
-	char *name = "card";
+	char *devfspath = NULL;
+	char *I_path = NULL;
+	char *p_path = NULL;
+	char *buf = NULL;
+	char *name = NULL;
+	char *unit;
+	int len;
+
+	devfsadm_print(debug_mid, "drm_node: node=%s type=%s\n",
+	    di_node_name(node), di_minor_nodetype(minor));
 
 	minor_nm = di_minor_name(minor);
 	drv_nm = di_driver_name(node);
@@ -263,8 +273,8 @@ drm_node(di_minor_t minor, di_node_t node)
 		return (DEVFSADM_CONTINUE);
 	}
 
-	devfsadm_print(debug_mid, "drm_node: minor=%s node=%s type=%s\n",
-	    minor_nm, di_node_name(node), di_minor_nodetype(minor));
+	devfsadm_print(debug_mid, "drm_node: dev_nm=%s minor_nm=%s\n",
+	    drv_nm, minor_nm);
 
 	devfspath = di_devfs_path(node);
 	if (devfspath == NULL) {
@@ -272,47 +282,81 @@ drm_node(di_minor_t minor, di_node_t node)
 		return (DEVFSADM_CONTINUE);
 	}
 
-	I_path = (char *)malloc(PATH_MAX);
-
-	if (I_path == NULL) {
-		di_devfs_path_free(devfspath);
+	/*
+	 * Want the minor name without trailing digits.
+	 * Also find the unit suffix in minor_nm.
+	 */
+	name = strdup(minor_nm);
+	if (name == NULL) {
 		devfsadm_print(debug_mid,  "drm_node: malloc failed\n");
-		return (DEVFSADM_CONTINUE);
+		goto out;
+	}
+	len = strlen(name);
+	while (len > 2 && isdigit(name[len-1]))
+		len--;
+	name[len] = '\0';
+	unit = &minor_nm[len];
+	devfsadm_print(debug_mid, "drm_node: trimmed minor %s, unit: %s\n",
+	    name, unit);
+
+	I_path = (char *)malloc(PATH_MAX);
+	if (I_path == NULL) {
+		devfsadm_print(debug_mid,  "drm_node: malloc failed\n");
+		goto out;
 	}
 
 	p_path = (char *)malloc(PATH_MAX);
-
 	if (p_path == NULL) {
 		devfsadm_print(debug_mid,  "drm_node: malloc failed\n");
-		di_devfs_path_free(devfspath);
-		free(I_path);
-		return (DEVFSADM_CONTINUE);
+		goto out;
 	}
 
 	(void) strlcpy(p_path, devfspath, PATH_MAX);
 	(void) strlcat(p_path, ":", PATH_MAX);
 	(void) strlcat(p_path, minor_nm, PATH_MAX);
-	di_devfs_path_free(devfspath);
 
 	devfsadm_print(debug_mid, "drm_node: p_path %s\n", p_path);
 
 	if (devfsadm_enumerate_int(p_path, 0, &buf, drm_rules, 1)) {
-		free(p_path);
 		devfsadm_print(debug_mid, "drm_node: exit/coninue\n");
-		return (DEVFSADM_CONTINUE);
+		goto out;
 	}
-	(void) snprintf(I_path, PATH_MAX, "dri/%s%s", name, buf);
 
-	devfsadm_print(debug_mid, "drm_node: p_path=%s buf=%s\n",
-	    p_path, buf);
+	/*
+	 * See xf86drm.c drmOpenDevice() and xf86drm.h DRM_DEV_NAME etc.
+	 * Basically, we need the links to look like this:
+	 *	/dev/dri/card0		-> /devices/pci@0,0/display@2:drm0
+	 *	/dev/dri/controlD0	-> /devices/pci@0,0/display@2:controlD0
+	 *	/dev/dri/renderD0	-> /devices/pci@0,0/display@2:renderD0
+	 * Most just use the full minor name as the link name,
+	 * but "card0" points to ...:drm0 so special case that.
+	 */
+	if (strcmp(name, "drm") == 0) {
+		strcpy(name, "card");
+	}
 
-	free(buf);
+	/*
+	 * The counter value in buf seems to be wrong.  It gives us
+	 * zero as expected in this case:
+	 *	dri/card0 -> .../display@2:drm0
+	 * but it gives us "1" in this case:
+	 *	dri/controlD1 -> .../display@2:controlD0
+	 * Work aound: ignore the counter value enum put in "buf"
+	 * and just use the unit number from the minor name.
+	 */
+	(void) snprintf(I_path, PATH_MAX, "dri/%s%s", name, unit);
 
 	devfsadm_print(debug_mid, "mklink %s -> %s\n", I_path, p_path);
 	(void) devfsadm_mklink(I_path, node, minor, 0);
 
+out:
+	free(buf);
+
 	free(p_path);
 	free(I_path);
+	free(name);
+	if (devfspath != NULL)
+		di_devfs_path_free(devfspath);
 
-	return (0);
+	return (DEVFSADM_CONTINUE);
 }

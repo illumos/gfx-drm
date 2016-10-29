@@ -310,6 +310,7 @@ static int drm_get_minor(struct drm_device *dev, struct drm_minor **minor, int t
 	struct drm_minor *new_minor;
 	int ret;
 	int minor_id;
+	int minor_unit;
 
 	DRM_DEBUG("\n");
 
@@ -330,16 +331,17 @@ static int drm_get_minor(struct drm_device *dev, struct drm_minor **minor, int t
 
 	(void) idr_replace(&drm_minors_idr, new_minor, minor_id);
 
+	minor_unit = minor_id & DRM_MINOR_ID_LIMIT_LEGACY; /* 63 */
 	if (type == DRM_MINOR_LEGACY)
-		(void) sprintf(new_minor->name, "drm%d", new_minor->index);
+		(void) sprintf(new_minor->name, "drm%d", minor_unit);
 	else if (type == DRM_MINOR_CONTROL)
-		(void) sprintf(new_minor->name, "controlD%d", new_minor->index);
+		(void) sprintf(new_minor->name, "controlD%d", minor_unit);
 	else if (type == DRM_MINOR_RENDER)
-		(void) sprintf(new_minor->name, "renderD%d", new_minor->index);
+		(void) sprintf(new_minor->name, "renderD%d", minor_unit);
 	else if (type == DRM_MINOR_VGATEXT)
-		(void) sprintf(new_minor->name, "gfx%d", new_minor->index - DRM_MINOR_ID_BASE_VGATEXT);
+		(void) sprintf(new_minor->name, "gfx%d", minor_unit);
 	else if (type == DRM_MINOR_AGPMASTER)
-		(void) sprintf(new_minor->name, "agpmaster%d", new_minor->index - DRM_MINOR_ID_BASE_AGPMASTER);
+		(void) sprintf(new_minor->name, "agpmaster%d", minor_unit);
 
 	idr_init(&new_minor->clone_idr);
 
