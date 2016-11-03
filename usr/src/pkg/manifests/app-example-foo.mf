@@ -21,9 +21,9 @@ set name=info.classification \
 set name=variant.arch value=$(ARCH)
 
 # dirs
-dir path=kernel
-dir path=kernel/drv
-dir path=kernel/drv/$(ARCH64)
+dir path=kernel group=sys
+dir path=kernel/drv group=sys
+dir path=kernel/drv/$(ARCH64) group=sys
 dir path=usr group=sys
 dir path=usr/bin
 dir path=usr/include
@@ -45,7 +45,7 @@ file path=usr/lib/$(ARCH64)/llib-lfoo.ln
 file path=usr/lib/libfoo.so.1
 file path=usr/lib/llib-lfoo
 file path=usr/lib/llib-lfoo.ln
-file path=usr/lib/mdb/kvm/amd64/fo.so
+file path=usr/lib/mdb/kvm/amd64/foo.so
 file path=usr/lib/mdb/kvm/foo.so
 file path=usr/share/man/man1/foo.1
 file path=usr/share/man/man3x/foo.3x
