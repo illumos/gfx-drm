@@ -197,11 +197,12 @@ PKGDEP_TOKENS= $(PKGDEP_TOKENS_$(PKGMACH))
 # dependency types, so that they can be included by either an
 # incorporation or a group package.
 #
-$(PDIR)/on-skel-redist.mog := PKGDEP_TYPE= require
-$(PDIR)/on-skel-incorp.mog:= PKGDEP_TYPE= incorporate
-
-PKGDEP_INCORP= \
-	depend fmri=consolidation/on-skel/os-skel-incorporation type=require
+# ON-skel no longer has an incorporation or consolidation
+# $(PDIR)/on-skel-redist.mog := PKGDEP_TYPE= require
+# $(PDIR)/on-skel-incorp.mog:= PKGDEP_TYPE= incorporate
+#
+# PKGDEP_INCORP= \
+#	depend fmri=consolidation/on-skel/on-skel-incorp type=require
 
 #
 # All packaging build products should go into $(PDIR), so they don't
@@ -226,7 +227,8 @@ PROC_PKGS= $(PKGS:%=$(PDIR)/%.mog)
 # build rules and dependencies.  The synthetic and real packages use
 # different sets of transforms and macros for pkgmogrify.
 #
-SYNTH_PKGS= on-skel-incorp on-skel-redist
+# on-skel no longer has these
+# SYNTH_PKGS= on-skel-incorp on-skel-redist
 DEP_SYNTH_PKGS= $(SYNTH_PKGS:%=$(PDIR)/%.dep)
 PROC_SYNTH_PKGS= $(SYNTH_PKGS:%=$(PDIR)/%.mog)
 
@@ -500,9 +502,11 @@ $(PDIR)/%.mog: manifests/%.mf
 		fi; \
 		$(LN) -s $(@F) \
 			$(PDIR)/$(@F:%.mog=%).metadata.$$PKGSTAT.$$REPO; \
-		if [ \( "$$PKGSTAT" = "current" \) -o \
-		     \( "$$PKGSTAT" = "renamed" \) ]; \
-			then print $(PKGDEP_INCORP) >> $(@); \
+		if [ "$(PKGDEP_INCORP)" ]; then \
+			if [ \( "$$PKGSTAT" = "current" \) -o \
+			     \( "$$PKGSTAT" = "renamed" \) ]; \
+				then print $(PKGDEP_INCORP) >> $(@); \
+			fi; \
 		fi; \
 		print $$LICS > $(@:%.mog=%.lics); \
 	else \
