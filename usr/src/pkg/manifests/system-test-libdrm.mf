@@ -47,6 +47,7 @@ file path=opt/drm-tests/$(ARCH64)/setversion
 file path=opt/drm-tests/$(ARCH64)/tegra_openclose
 file path=opt/drm-tests/$(ARCH64)/updatedraw
 file path=opt/drm-tests/$(ARCH64)/vbltest
+file path=opt/drm-tests/Run_all.sh
 file path=opt/drm-tests/dristat
 file path=opt/drm-tests/drmdevice
 file path=opt/drm-tests/drmsl

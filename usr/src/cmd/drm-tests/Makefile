@@ -32,9 +32,19 @@ clobber:=	TARGET= clobber
 lint:=		TARGET= lint
 catalog:=       TARGET= catalog
 
+PROG=	Run_all.sh
+
 all clean clobber lint: $(SUBDIRS)
-install: rootdirs .WAIT $(SUBDIRS)
+install: rootdirs .WAIT rootcmd $(SUBDIRS)
+
+# These indirect names (rootdirs, rootcmd) are just so
+# you can make those targets separately from subdirs.
 rootdirs: $(ROOTCMDDIR) $(ROOTCMDDIR64)
+rootcmd: $(ROOTCMD)
+
+$(ROOTCMD) := FILEMODE= 755
+$(ROOTCMDDIR)/%.sh: %.sh
+	$(INS.file)
 
 $(SUBDIRS): FRC
 	@cd $@; pwd; $(MAKE) $(TARGET)
