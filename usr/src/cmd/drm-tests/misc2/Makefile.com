@@ -20,7 +20,8 @@ PROG= \
 	getstats	\
 	setversion	\
 	updatedraw	\
-	name_from_fd
+	name_from_fd	\
+	getsundev
 
 # All programs here require this devinfo object.
 DEVOBJ=drmtest_sun.o
@@ -52,6 +53,9 @@ clean:
 
 %.o : ../common/%.c
 	$(COMPILE.c) -o $@ -c $<
+
+getsundev : getsundev.o
+	$(LINK.c) -o $@ $@.o $(DEVOBJ) $(LDLIBS)
 
 .KEEP_STATE:
 

@@ -30,8 +30,8 @@ VERS=		.2
 
 # See common/libdrm/libdrm-*/Makefile.in am__objects
 OBJECTS=	xf86drm.o xf86drmHash.o \
-	xf86drmRandom.o xf86drmSL.o \
-	xf86drmMode.o
+	xf86drmRandom.o xf86drmSL.o xf86drmMode.o \
+	sun_xf86drm.o sun_devinfo.o
 
 include ../../Makefile.lib
 include $(SRC)/common/libdrm/Makefile.drm
@@ -43,8 +43,10 @@ MAPFILES=
 SRCDIR =	$(LIBDRM_CMN_DIR)
 SRCS =		$(OBJECTS:%.o=$(SRCDIR)/%.c)
 
+CPPFLAGS +=	-I$(LIBDRM_CMN_DIR)
+
 # CFLAGS +=	$(CCVERBOSE)
-LDLIBS += -lm -lc
+LDLIBS += -lm -ldevinfo -lc
 
 all : $(LIBS) $(PCS)
 
@@ -52,5 +54,9 @@ lint :
 
 include ../Makefile.pc
 include ../../Makefile.targ
+
+objs/%.o pics/%.o: ../common/%.c
+	$(COMPILE.c) -o $@ $<
+	$(POST_PROCESS_O)
 
 .KEEP_STATE:

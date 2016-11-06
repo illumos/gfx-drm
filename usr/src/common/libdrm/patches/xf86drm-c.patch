@@ -1,7 +1,83 @@
-diff ... b/xf86drm.c
---- a/xf86drm.c	Fri Mar 20 07:05:48 2015
-+++ b/xf86drm.c	Fri Mar 20 07:06:10 2015
-@@ -1108,7 +1108,7 @@
+diff ... libdrm-2.4.71/xf86drm.c
+--- libdrm-2.4.71-ref/xf86drm.c	Wed Jul 20 19:42:21 2016
++++ libdrm-2.4.71/xf86drm.c	Sun Nov 20 11:16:08 2016
+@@ -98,6 +98,11 @@
+ #endif
+ #endif /* __OpenBSD__ */
+ 
++#if defined(__sun)
++/* Device majors are dynamic. */
++#define DRM_MAJOR	(_sun_drm_get_major())
++#endif /* __sun */
++
+ #ifndef DRM_MAJOR
+ #define DRM_MAJOR 226 /* Linux */
+ #endif
+@@ -349,9 +354,14 @@
+     if (stat(DRM_DIR_NAME, &st)) {
+         if (!isroot)
+             return DRM_ERR_NOT_ROOT;
++#if defined(__sun)
++	/* Let the system do this. */
++	return DRM_ERR_NO_DEVICE;
++#else
+         mkdir(DRM_DIR_NAME, DRM_DEV_DIRMODE);
+         chown_check_return(DRM_DIR_NAME, 0, 0); /* root:root */
+         chmod(DRM_DIR_NAME, DRM_DEV_DIRMODE);
++#endif
+     }
+ 
+     /* Check if the device node exists and create it if necessary. */
+@@ -358,8 +368,13 @@
+     if (stat(buf, &st)) {
+         if (!isroot)
+             return DRM_ERR_NOT_ROOT;
++#if defined(__sun)
++	/* Let the system do this. */
++	return DRM_ERR_NO_DEVICE;
++#else
+         remove(buf);
+         mknod(buf, S_IFCHR | devmode, dev);
++#endif
+     }
+ 
+     if (drm_server_info && drm_server_info->get_perms) {
+@@ -405,6 +420,10 @@
+     if (st.st_rdev != dev) {
+         if (!isroot)
+             return DRM_ERR_NOT_ROOT;
++#if defined(__sun)
++	/* Let the system do this. */
++	return DRM_ERR_NO_DEVICE;
++#else
+         remove(buf);
+         mknod(buf, S_IFCHR | devmode, dev);
+         if (drm_server_info && drm_server_info->get_perms) {
+@@ -411,6 +430,7 @@
+             chown_check_return(buf, user, group);
+             chmod(buf, devmode);
+         }
++#endif
+     }
+     fd = open(buf, O_RDWR, 0);
+     drmMsg("drmOpenDevice: open result is %d, (%s)\n",
+@@ -532,6 +552,7 @@
+     }
+ }
+ 
++#ifndef __sun /* Avoid "static unused" warning */
+ static const char *drmGetMinorName(int type)
+ {
+     switch (type) {
+@@ -545,6 +566,7 @@
+         return NULL;
+     }
+ }
++#endif /* __sun */
+ 
+ /**
+  * Open the device by bus ID.
+@@ -1108,7 +1130,7 @@
      drm_map_t map;
  
      memclear(map);
@@ -10,3 +86,89 @@ diff ... b/xf86drm.c
  
      if(drmIoctl(fd, DRM_IOCTL_RM_MAP, &map))
          return -errno;
+@@ -2696,6 +2718,15 @@
+     fstat(fd, &sbuf);
+     d = sbuf.st_rdev;
+ 
++#if defined(__sun)
++    /*
++     * Get rid of clone-open bits in the minor number.
++     * See: the drm driver drm_sun_open()
++     * Don't have DRM_CLONEID_NBITS here.
++     */
++    d &= ~0x3fe00;
++#endif
++
+     for (i = 0; i < DRM_MAX_MINOR; i++) {
+         snprintf(name, sizeof name, DRM_DEV_NAME, DRM_DIR_NAME, i);
+         if (stat(name, &sbuf) == 0 && sbuf.st_rdev == d)
+@@ -2761,6 +2792,10 @@
+     return 0;
+ }
+ 
++#ifdef __sun	/* OS-dependent */
++#define drmGetMinorNameForFD(fd, t) \
++	_sun_drmGetMinorNameForFD(fd, t)
++#else /* __sun */
+ static char *drmGetMinorNameForFD(int fd, int type)
+ {
+ #ifdef __linux__
+@@ -2822,6 +2857,7 @@
+ #endif
+     return NULL;
+ }
++#endif /* __sun */
+ 
+ char *drmGetPrimaryDeviceNameFromFd(int fd)
+ {
+@@ -2833,6 +2869,10 @@
+     return drmGetMinorNameForFD(fd, DRM_NODE_RENDER);
+ }
+ 
++#ifdef __sun	/* OS-dependent */
++#define drmParseSubsystemType(ma, mi) \
++	_sun_drmParseSubsystemType(ma, mi)
++#else /* __sun */
+ static int drmParseSubsystemType(int maj, int min)
+ {
+ #ifdef __linux__
+@@ -2859,7 +2899,12 @@
+     return -EINVAL;
+ #endif
+ }
++#endif /* __sun */
+ 
++#ifdef __sun	/* OS-dependent */
++#define drmParsePciBusInfo(ma, mi, inf)	\
++	_sun_drmParsePciBusInfo(ma, mi, inf)
++#else /* __sun */
+ static int drmParsePciBusInfo(int maj, int min, drmPciBusInfoPtr info)
+ {
+ #ifdef __linux__
+@@ -2901,6 +2946,7 @@
+     return -EINVAL;
+ #endif
+ }
++#endif /* __sun */
+ 
+ static int drmCompareBusInfo(drmDevicePtr a, drmDevicePtr b)
+ {
+@@ -2946,6 +2992,10 @@
+            3 /* length of the node number */;
+ }
+ 
++#ifdef __sun	/* OS-dependent */
++#define drmParsePciDeviceInfo(name, dip) \
++	_sun_drmParsePciDeviceInfo(name, dip)
++#else /* __sun */
+ static int drmParsePciDeviceInfo(const char *d_name,
+                                  drmPciDeviceInfoPtr device)
+ {
+@@ -2976,6 +3026,7 @@
+     return -EINVAL;
+ #endif
+ }
++#endif /* __sun */
+ 
+ void drmFreeDevice(drmDevicePtr *device)
+ {

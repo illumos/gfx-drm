@@ -25,6 +25,29 @@
  *
  */
 
+/*
+ * Copyright 2016 Gordon W. Ross
+ */
+
+/*
+ * Helper functions for libdrm/tests.  See:
+ * drm_open_any()
+ *	getclient.c
+ *	getstats.c
+ *	getversion.c
+ *	openclose.c
+ * drm_open_any_master()
+ *	setversion.c
+ *	updatedraw.c
+ *
+ * This module replaces libdrm/tests/drmtest.c
+ * which needs the linux "udev" interfaces.
+ * Here we use libdevinfo.h instead via these
+ * private interfaces in libdrm:
+ *	_sun_drm_find_device()
+ *	_sun_drm_get_pci_info()
+ */
+
 #include <string.h>
 #include <fcntl.h>
 #include <fnmatch.h>
@@ -53,48 +76,45 @@ static int is_master(int fd)
 	return 1;
 }
 
-/** Open the first DRM device matching the criteria */
+/*
+ * Open the first DRM device matching the criteria
+ */
 int drm_open_matching(const char *pci_glob, int flags)
 {
-	di_node_t udev;
-//	struct udev_enumerate *e;
-//	struct udev_device *device, *parent;
-//	struct udev_list_entry *entry;
-	const char *pci_id, *path;
-	const char *usub, *dnode;
-	uint_t di_flags;
-	int fd;
+	char *path = NULL;
+	int i, ret;
+	int fd = -1;
 
-	/* Get everything? */
-	di_flags = DINFOSUBTREE | DINFOPROP | DINFOMINOR | DINFOPATH | DINFOLYR;
-	udev = di_init("/", di_flags);
-	if (udev == DI_NODE_NIL) {
-		fprintf(stderr, "failed to initialize devinfo context\n");
-		exit (1);
-	}
+	/*
+	 * If our glob patter matches all, let's skip
+	 * getting the PCI info etc.
+	 */
+	if (strcmp(pci_glob, "*:*") == 0)
+		pci_glob = NULL;
 
-	fd = -1;
-#if 0 // Todo
-	e = udev_enumerate_new(udev);
-	udev_enumerate_add_match_subsystem(e, "drm");
-        udev_enumerate_scan_devices(e);
-        udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(e)) {
-		path = udev_list_entry_get_name(entry);
-		device = udev_device_new_from_syspath(udev, path);
-		parent = udev_device_get_parent(device);
-		usub = udev_device_get_subsystem(parent);
-		/* Filter out KMS output devices. */
-		if (!usub || (strcmp(usub, "pci") != 0))
+	/* Could also start at the offset for some device type. */
+	for (i = 0; i < DRM_MAX_MINOR; i++) {
+		free(path);
+		ret = _sun_drm_find_device(i, &path);
+		if (ret != 0)
 			continue;
-		pci_id = udev_device_get_property_value(parent, "PCI_ID");
-		if (fnmatch(pci_glob, pci_id, 0) != 0)
-			continue;
-		dnode = udev_device_get_devnode(device);
-		if (strstr(dnode, "control"))
-			continue;
-		fd = open(dnode, O_RDWR);
+
+		if (pci_glob != NULL) {
+			drmPciDeviceInfo pcii;
+			char pci_str[32];
+			ret = _sun_drm_get_pci_info(path, &pcii);
+			if (ret != 0)
+				continue;
+			snprintf(pci_str, sizeof (pci_str),
+			    "%x:%x", pcii.vendor_id, pcii.device_id);
+			if (fnmatch(pci_glob, pci_str, 0) != 0)
+				continue;
+		}
+
+		fd = open(path, O_RDWR);
 		if (fd < 0)
 			continue;
+
 		if ((flags & DRM_TEST_MASTER) && !is_master(fd)) {
 			close(fd);
 			fd = -1;
@@ -103,12 +123,8 @@ int drm_open_matching(const char *pci_glob, int flags)
 
 		break;
 	}
-        udev_enumerate_unref(e);
-#else
-	exit (1);
-#endif
 
-	di_fini(udev);
+	free(path);
 
 	return fd;
 }

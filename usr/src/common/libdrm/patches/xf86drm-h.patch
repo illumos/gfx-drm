@@ -47,3 +47,21 @@ index 76eb94e..6a14120 100644
  #ifndef DRM_CAS
  #define DRM_CAS(lock,old,new,ret) do { ret=1; } while (0) /* FAST LOCK FAILS */
  #endif
+@@ -796,6 +807,17 @@
+ extern int drmGetDevices(drmDevicePtr devices[], int max_devices);
+ extern void drmFreeDevices(drmDevicePtr devices[], int count);
+ 
++#ifdef __sun
++extern int _sun_drm_get_major(void);
++extern char * _sun_drmGetMinorNameForFD(int fd, int type);
++extern int _sun_drmParseSubsystemType(int maj, int min);
++extern int _sun_drmParsePciBusInfo(int maj, int min, drmPciBusInfoPtr info);
++extern int _sun_drmParsePciDeviceInfo(const char *d_name,
++				 drmPciDeviceInfoPtr device);
++extern int _sun_drm_find_device(int min, char **pathp);
++extern int _sun_drm_get_pci_info(char *path, drmPciDeviceInfo *pcii);
++#endif /* __sun */
++
+ #if defined(__cplusplus)
+ }
+ #endif
