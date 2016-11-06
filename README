@@ -1,47 +1,91 @@
 
-This is a skeleton of an "ON" (illumos) build.
+This is the "graphics/DRM" gate, in which we build the
+DRM kernel modules and related DRM libraries.
 
-You can use it to build drivers, libraries, and commands,
-that you might plan to later integrate into illumos, but
-don't want to wait for full illumos builds while you're
-developing your code.
 
-As provided, this skeleton builds one driver, one library,
-and one command, all named "foo".  These are intentionally
-trivial objects, just to demonstrate how it builds.
+Introduction:
 
-The Makefile here is a wrappter to build the whole gate
-in a few separate steps.  All steps use the command:
-	bldenv myenv.sh "cd ...; make"
-to setup the environment expected by the gate and
-run make in the necessary places to build it all.
-The rapper makefile supports three targets:
+DRM stands for Direct Rendering Manager, which is a collection of
+kernel modules and libraries that allow programs like the Xorg
+server to operate hardware-accelerated graphics cards.  This
+software currently supports Intel (R) integrated graphics devices
+with hardware acceleration, video memory management, Graphics
+Execution Manager (GEM), and kernel modesetting (KMS).
+
+
+How to build:
+
+Clone this repo. onto an OpenIndiana or similar build system
+with the "build-essential" packages installed, then:
+	cd (top of clone)
 	make install
 	make package
-	make clean
 
-Here is a list of all the places you might want to copy
-to add another driver, library, or command:
 
-	uts/common/sys/foo.h
-	uts/common/io/foo/*
-	uts/common/Makefile.files	(FOO_OBJS += foo.o)
-	uts/common/Makefile.rules	(common/io/foo, two places)
-	uts/intel/Makefile.intel.shared	(DRV_KMODS += foo)
-	uts/intel/foo/Makefile
-	uts/sparc/Makefile.sparc.shared	(DRV_KMODS += foo)
-	uts/sparc/foo/Makefile
+Overview:
 
-	lib/libfoo/Makefile
-	lib/libfoo/Makefile.com
-	lib/libfoo/*/Makefile
-	lib/libfoo/common/*
+The major kernel components are:
 
-	cmd/foo
+	usr/src/uts/intel/io/i915	i915 driver
+	usr/src/uts/common/io/drm/	DRM "misc" support
+	usr/src/uts/intel/io/agpmaster	AGP master support
+	usr/src/uts/intel/io/agpgart	AGP GART, AGP target
 
-	man/man1/foo.1
-	man/man3x/libfoo.3x
-	man/man7/foo.7
+	Dependendencies:
+		i915 -> drm
+		drm -> agpmaster, gfx_private
 
-For more information about developing device drivers for illumos, please read this document: 
-https://illumos.org/books/wdd/eqbqn.html
+The user-level libraries are:
+
+	usr/src/lib/libdrm/		DRM driver
+	usr/src/lib/libdrm_*		H/W-specific DRM support
+	usr/src/lib/libkms		Kernel Mode Setting support
+
+Note that the source for those libraries is EXTERNAL, and
+NOT checked into this gate.  At build time, the library
+sources are downloaded from:
+	http://dri.freedesktop.org/libdrm/
+and then unpacked and patched under:
+	usr/src/common/libdrm/
+
+That makes this gate a little unusual, sort of a "hybrid"
+between how illumos-gate does things and how the "userland"
+gate does things.  There are good reasons for this.
+
+The kernel code is very much operaging-system-specific,
+and therefore can not simply track some "upstream" like
+the user-level library code can.  It's also a little
+tricky to build kernel code "correctly", which is why
+the kernel build parts of this gate are based on the
+"ON skeleton" gate:  https://github.com/gwr/on-skel
+
+The user-level libraries here are built with minimal
+changes relatative to the upstream, and therefore can
+use a strategy similar to that in the "userland" gate:
+	https://github.com/OpenIndiana/oi-userland
+
+
+Development and testing:
+
+If you find you need to make changes to library code
+(such as when updating to a new version) the easiest
+way is to save a copy of the unpacked library source
+before patching (use "make unpack"), then go ahead
+and edit files as needed, and once you're happy with
+the changes use "diff -u saved-lib edited-lib" to
+update the files in the patches directory.  Use:
+  usr/src/common/libdrm/Check-patches
+to check that your patches are in sync with edits.
+
+When doing incremental work in the gate, i.e. fixing
+compilation errors, it's handy to run an editor in a
+"bldenv" environment, as follows:
+	bldenv -d myenv.sh
+
+That gets you a new shell, in which you can run an
+emacs if you like "meta-x compile", or whatever.
+Just cd to where the top-level make had problems
+and run make.  Then fix bugs, open pull requests.
+
+Please run the tests before submitting pull requests.
+They're installed as /opt/drm-test/*
