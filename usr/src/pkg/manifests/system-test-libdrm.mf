@@ -13,6 +13,7 @@
 # Copyright 2016 Gordon W. Ross
 #
 
+<transform file path=opt/drm-tests/.+ -> default mode 0555>
 set name=pkg.fmri value=pkg:/system/test/libdrm@$(PKGVERS)
 set name=pkg.description value="DRM Library Unit Tests"
 set name=pkg.summary value="DRM Library Unit Test Suite"
