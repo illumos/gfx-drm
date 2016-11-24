@@ -32,7 +32,8 @@ clobber:=	TARGET= clobber
 lint:=		TARGET= lint
 catalog:=       TARGET= catalog
 
-PROG=	Run_all.sh
+SCRIPT=	Run_all.sh
+ROOTCMD= $(SCRIPT:%=$(ROOTCMDDIR)/%)
 
 all clean clobber lint: $(SUBDIRS)
 install: rootdirs .WAIT rootcmd $(SUBDIRS)
