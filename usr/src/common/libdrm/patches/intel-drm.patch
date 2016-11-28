@@ -1,8 +1,7 @@
-diff --git a/intel/intel_bufmgr_gem.c b/intel/intel_bufmgr_gem.c
-index 0a4012b..cb463be 100644
---- a/intel/intel_bufmgr_gem.c
-+++ b/intel/intel_bufmgr_gem.c
-@@ -3268,13 +3268,24 @@ drm_intel_bufmgr_gem_set_aub_annotations(drm_intel_bo *bo,
+diff ... libdrm-2.4.73/intel/intel_bufmgr_gem.c
+--- libdrm-2.4.73-ref/intel/intel_bufmgr_gem.c	Mon Nov 14 14:48:04 2016
++++ libdrm-2.4.73/intel/intel_bufmgr_gem.c	Mon Nov 28 14:37:11 2016
+@@ -3352,6 +3352,16 @@
  static pthread_mutex_t bufmgr_list_mutex = PTHREAD_MUTEX_INITIALIZER;
  static drmMMListHead bufmgr_list = { &bufmgr_list, &bufmgr_list };
  
@@ -19,6 +18,7 @@ index 0a4012b..cb463be 100644
  static drm_intel_bufmgr_gem *
  drm_intel_bufmgr_gem_find(int fd)
  {
+@@ -3358,7 +3368,8 @@
  	drm_intel_bufmgr_gem *bufmgr_gem;
  
  	DRMLISTFOREACHENTRY(bufmgr_gem, &bufmgr_list, managers) {

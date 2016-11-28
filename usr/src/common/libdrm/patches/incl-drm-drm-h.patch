@@ -25,21 +25,26 @@
 # or other dealings in this Software without prior written authorization
 # of the copyright holder.
 
-diff --git a/include/drm/drm.h b/include/drm/drm.h
+diff -u ... libdrm-2.4.73/include/drm/drm.h
 index 8adb9d5..f9bedd0 100644
---- a/include/drm/drm.h	2016-04-28 03:44:16.000000000 +0300
-+++ b/include/drm/drm.h	2016-05-24 10:27:22.341573589 +0300
-@@ -55,10 +55,36 @@
+--- libdrm-2.4.73-ref/include/drm/drm.h	Mon Nov 14 14:46:05 2016
++++ libdrm-2.4.73/include/drm/drm.h	Mon Nov 28 14:32:21 2016
+@@ -55,14 +55,40 @@
  typedef int64_t  __s64;
  typedef uint64_t __u64;
  typedef size_t   __kernel_size_t;
 +#if defined(__SOLARIS__) || defined(__sun)
 +#include <sys/types32.h>
 +typedef unsigned long long drm_handle_t;
-+#else
++#else	/* __SOLARIS__ or __sun */
  typedef unsigned long drm_handle_t;
-+#endif
++#endif	/* __SOLARIS__ or __sun */
  
+-#endif
++#endif /* One of the BSDs */
+ 
+ #if defined(__cplusplus)
+ extern "C" {
  #endif
  
 +/* Solaris-specific. */
@@ -66,7 +71,7 @@ index 8adb9d5..f9bedd0 100644
  #define DRM_NAME	"drm"	  /**< Name in kernel, /dev, and /proc */
  #define DRM_MIN_ORDER	5	  /**< At least 2^5 bytes = 32 bytes */
  #define DRM_MAX_ORDER	22	  /**< Up to 2^22 bytes = 4MB */
-@@ -181,7 +207,8 @@
+@@ -185,7 +211,8 @@
  	_DRM_SHM = 2,		  /**< shared, cached */
  	_DRM_AGP = 3,		  /**< AGP/GART */
  	_DRM_SCATTER_GATHER = 4,  /**< Scatter/gather memory for PCI DMA */
@@ -76,7 +81,7 @@ index 8adb9d5..f9bedd0 100644
  };
  
  /**
-@@ -210,12 +237,13 @@
+@@ -214,12 +241,13 @@
   * \sa drmAddMap().
   */
  struct drm_map {
@@ -93,7 +98,7 @@ index 8adb9d5..f9bedd0 100644
  	int mtrr;		 /**< MTRR slot used */
  	/*   Private data */
  };
-@@ -322,18 +350,22 @@
+@@ -326,18 +354,22 @@
   *
   * \sa drmAddBufs().
   */
@@ -123,7 +128,7 @@ index 8adb9d5..f9bedd0 100644
  	unsigned long agp_start; /**<
  				  * Start address of where the AGP buffers are
  				  * in the AGP aperture
-@@ -379,6 +411,7 @@
+@@ -383,6 +415,7 @@
  	void *virtual;		/**< Mmap'd area in user-virtual */
  #endif
  	struct drm_buf_pub *list;	/**< Buffer information */

@@ -17,7 +17,7 @@
 #
 # See also: ./Makefile LIBDRM_VERS and
 # $SRC/pkg/manifests/x11-library-libdrm.mf
-LIBDRM_VERS=2.4.71
+LIBDRM_VERS=2.4.73
 
 LIBDRM_CMN_DIR=$(SRC)/common/libdrm/libdrm-$(LIBDRM_VERS)
 
