@@ -56,7 +56,6 @@ GENSTUBS_OBJS += $(COMMON_GENSTUBS_OBJS) $($(MACH)_GENSTUBS_OBJS)
 #	Driver (pseudo-driver) Modules
 #
 
-FOO_OBJS += foo.o
 
 
 

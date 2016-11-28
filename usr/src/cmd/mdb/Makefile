@@ -30,7 +30,6 @@ include $(SRC)/Makefile.master
 
 sparc_SUBDIRS =
 i386_SUBDIRS = \
-	foo \
 	i915
 
 SUBDIRS = $($(MACH)_SUBDIRS)

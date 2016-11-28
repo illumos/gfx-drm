@@ -43,13 +43,7 @@
 #	Section 1a: C objects build rules
 #
 
-$(OBJS_DIR)/%.o:		$(UTSBASE)/common/io/foo/%.c
-	$(COMPILE.c) -o $@ $<
-	$(CTFCONVERT_O)
 
 #
 #	Section 1b:	Lint `objects'
 #
-
-$(LINTS_DIR)/%.ln:		$(UTSBASE)/common/io/foo/%.c
-	@($(LHEAD) $(LINT.c) $< $(LTAIL))

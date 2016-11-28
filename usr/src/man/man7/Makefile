@@ -29,8 +29,8 @@ GENLINKS= \
 	drm-gem.7 \
 	drm-ttm.7
 
-MANFILES= 	foo.7 \
-		$(GENMANS)
+MANFILES= $(GENMANS)
+
 MANLINKS=
 
 .KEEP_STATE:

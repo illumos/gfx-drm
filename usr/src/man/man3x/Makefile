@@ -17,13 +17,9 @@ include		$(SRC)/Makefile.master
 
 MANSECT= 	3x
 
-MANFILES= 	foo.3x
+MANFILES=
 
-MANLINKS=	foo_getcnt.3x foo_message.3x libfoo.3x
-
-foo_getcnt.3x 	:= LINKSRC = foo.3x
-foo_message.3x	:= LINKSRC = foo.3x
-libfoo.3x	:= LINKSRC = foo.3x
+MANLINKS=
 
 .KEEP_STATE:
 

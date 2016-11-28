@@ -13,6 +13,8 @@
 # Copyright 2016 Gordon W. Ross
 #
 
+CLOBBERFILES += $(PCS)
+
 ROOTPCDIR=	$(ROOT)/usr/lib/pkgconfig
 ROOTPCDIR64=	$(ROOT)/usr/lib/$(MACH64)/pkgconfig
 
