@@ -112,7 +112,7 @@ static gen6_gtt_pte_t hsw_pte_encode(struct drm_device *dev,
 
 static ddi_dma_attr_t ppgt_dma_attr = {
 	DMA_ATTR_V0,
-	0xff000U, 			/* dma_attr_addr_lo */
+	0, 				/* dma_attr_addr_lo */
 	0xffffffffU,			/* dma_attr_addr_hi */
 	0xffffffffU,			/* dma_attr_count_max */
 	4096,				/* dma_attr_align */
