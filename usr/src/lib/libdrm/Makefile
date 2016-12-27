@@ -62,7 +62,7 @@ DRM_HDRS= \
 	via_drm.h \
 	vmwgfx_drm.h
 
-ROOT_DRM_HDRS=	$(DRM_HDRS:%=$(ROOTHDRDIR)/libdrm/%)
+ROOT_DRM_HDRS=	$(DRM_HDRS:%=$(ROOTHDRDIR)/drm/%)
 
 .KEEP_STATE:
 
@@ -70,12 +70,15 @@ install: all .WAIT $(SUBDIRS)
 
 all clean clobber lint: $(SUBDIRS)
 
-install_h: $(ROOTHDRS) $(ROOT_DRM_HDRS)
+install_h: $(ROOTHDRS) $(ROOT_DRM_HDRS) $(ROOTHDRDIR)/libdrm
 
 # need to mkdir...
-$(ROOT_DRM_HDRS) : $(ROOTHDRDIR)/libdrm
-$(ROOTHDRDIR)/libdrm :
+$(ROOT_DRM_HDRS) : $(ROOTHDRDIR)/drm
+$(ROOTHDRDIR)/drm :
 	$(INS.dir) $@
+
+$(ROOTHDRDIR)/libdrm: FRC
+	$(RM) -r $@; $(LN) -s drm $@
 
 check:	$(CHECKHDRS)
 
@@ -84,7 +87,7 @@ _msg: # no msgfiles here
 $(POFILE):      pofile_MSGFILES
 
 # install rules for install_h target
-$(ROOTHDRDIR)/libdrm/%: $(LIBDRM_CMN_DIR)/include/drm/%
+$(ROOTHDRDIR)/drm/%: $(LIBDRM_CMN_DIR)/include/drm/%
 	$(INS.file)
 
 # HDRS=...

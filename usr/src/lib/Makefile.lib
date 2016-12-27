@@ -55,6 +55,8 @@ SRCDIR =	..
 MAPFILEDIR =	$(SRCDIR)
 MAPFILES =	$(MAPFILEDIR)/mapfile-vers
 
+PCLIBDIR=/usr/lib/xorg
+
 #
 # If HDRDIR is left unset, then it's possible for the $(ROOTHDRDIR)/%
 # install rule in lib/Makefile.targ to generate false matches if there

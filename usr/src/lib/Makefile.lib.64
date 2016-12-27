@@ -30,6 +30,8 @@
 #
 include	$(SRC)/Makefile.master.64
 
+PCLIBDIR=/usr/lib/xorg/$(MACH64)
+
 #
 # Target Architecture
 #

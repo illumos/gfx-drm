@@ -39,7 +39,7 @@ clobber :=	TARGET= clobber
 install :=	TARGET= install
 lint :=		TARGET= lint
 
-ROOTHDRDIR=	$(ROOT)/usr/include/libdrm
+ROOTHDRDIR=	$(ROOT)/usr/include/drm
 
 HDRS= \
 	intel_aub.h \
