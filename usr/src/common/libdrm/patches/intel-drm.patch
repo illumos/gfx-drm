@@ -1,6 +1,6 @@
 diff ... libdrm-2.4.73/intel/intel_bufmgr_gem.c
 --- libdrm-2.4.73-ref/intel/intel_bufmgr_gem.c	Mon Nov 14 14:48:04 2016
-+++ libdrm-2.4.73/intel/intel_bufmgr_gem.c	Mon Nov 28 14:37:11 2016
++++ libdrm-2.4.73/intel/intel_bufmgr_gem.c	Sat Dec 31 12:27:53 2016
 @@ -3352,6 +3352,16 @@
  static pthread_mutex_t bufmgr_list_mutex = PTHREAD_MUTEX_INITIALIZER;
  static drmMMListHead bufmgr_list = { &bufmgr_list, &bufmgr_list };
@@ -28,3 +28,14 @@ diff ... libdrm-2.4.73/intel/intel_bufmgr_gem.c
  			atomic_inc(&bufmgr_gem->refcount);
  			return bufmgr_gem;
  		}
+diff ... libdrm-2.4.73/intel/intel_decode.c
+--- libdrm-2.4.73-ref/intel/intel_decode.c	Wed Aug 24 12:57:39 2016
++++ libdrm-2.4.73/intel/intel_decode.c	Sat Dec 31 17:49:32 2016
+@@ -402,6 +402,7 @@
+ 		format = "1555";
+ 		break;
+ 	case 3:
++	default:	/* Keep GCC happy. */
+ 		format = "8888";
+ 		break;
+ 	}
