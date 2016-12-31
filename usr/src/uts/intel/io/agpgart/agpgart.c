@@ -142,6 +142,7 @@ static void
 amd64_gart_unregister(amd64_garts_dev_t *cpu_garts);
 
 
+/*ARGSUSED*/
 static void
 agp_devmap_unmap(devmap_cookie_t handle, void *devprivate,
     offset_t off, size_t len, devmap_cookie_t new_handle1,
@@ -149,7 +150,7 @@ agp_devmap_unmap(devmap_cookie_t handle, void *devprivate,
     void **new_devprivate2)
 {
 
-	struct keytable_ent *mementry;
+	struct keytable_ent *mementry = NULL;
 	agpgart_softstate_t *softstate;
 	agpgart_ctx_t *ctxp, *newctxp1, *newctxp2;
 
@@ -187,7 +188,7 @@ agp_devmap_unmap(devmap_cookie_t handle, void *devprivate,
 		ASSERT(mementry);
 		mementry->kte_refcnt++;
 	}
-	ASSERT(mementry->kte_refcnt >= 0);
+	ASSERT(mementry == NULL || mementry->kte_refcnt >= 0);
 	mutex_exit(&softstate->asoft_instmutex);
 	kmem_free(ctxp, sizeof (struct agpgart_ctx));
 }
