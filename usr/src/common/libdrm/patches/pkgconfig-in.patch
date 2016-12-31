@@ -1,0 +1,127 @@
+diff ... libdrm-2.4.73/amdgpu/libdrm_amdgpu.pc.in
+--- libdrm-2.4.73-ref/amdgpu/libdrm_amdgpu.pc.in	Thu Jun 30 10:28:51 2016
++++ libdrm-2.4.73/amdgpu/libdrm_amdgpu.pc.in	Sat Dec 31 00:51:51 2016
+@@ -6,6 +6,6 @@
+ Name: libdrm_amdgpu
+ Description: Userspace interface to kernel DRM services for amdgpu
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -ldrm_amdgpu
+-Cflags: -I${includedir} -I${includedir}/libdrm
++Libs: -L${libdir} -R${libdir} -ldrm_amdgpu
++Cflags: -I${includedir} -I${includedir}/drm
+ Requires.private: libdrm
+diff ... libdrm-2.4.73/etnaviv/libdrm_etnaviv.pc.in
+--- libdrm-2.4.73-ref/etnaviv/libdrm_etnaviv.pc.in	Mon Nov 14 12:55:20 2016
++++ libdrm-2.4.73/etnaviv/libdrm_etnaviv.pc.in	Sat Dec 31 00:51:51 2016
+@@ -7,5 +7,5 @@
+ Description: Userspace interface to etnaviv kernel DRM services
+ Version: @PACKAGE_VERSION@
+ Libs: -L${libdir} -ldrm_etnaviv
+-Cflags: -I${includedir} -I${includedir}/libdrm
++Cflags: -I${includedir} -I${includedir}/drm
+ Requires.private: libdrm
+diff ... libdrm-2.4.73/exynos/libdrm_exynos.pc.in
+--- libdrm-2.4.73-ref/exynos/libdrm_exynos.pc.in	Thu Jun 30 10:28:51 2016
++++ libdrm-2.4.73/exynos/libdrm_exynos.pc.in	Sat Dec 31 00:51:51 2016
+@@ -6,6 +6,6 @@
+ Name: libdrm_exynos
+ Description: Userspace interface to exynos kernel DRM services
+ Version: 0.7
+-Libs: -L${libdir} -ldrm_exynos
+-Cflags: -I${includedir} -I${includedir}/libdrm -I${includedir}/exynos
++Libs: -L${libdir} -R${libdir} -ldrm_exynos
++Cflags: -I${includedir} -I${includedir}/drm -I${includedir}/exynos
+ Requires.private: libdrm
+diff ... libdrm-2.4.73/freedreno/libdrm_freedreno.pc.in
+--- libdrm-2.4.73-ref/freedreno/libdrm_freedreno.pc.in	Mon Jun 29 12:32:59 2015
++++ libdrm-2.4.73/freedreno/libdrm_freedreno.pc.in	Sat Dec 31 00:51:51 2016
+@@ -6,6 +6,6 @@
+ Name: libdrm_freedreno
+ Description: Userspace interface to freedreno kernel DRM services
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -ldrm_freedreno
+-Cflags: -I${includedir} -I${includedir}/libdrm -I${includedir}/freedreno
++Libs: -L${libdir} -R${libdir} -ldrm_freedreno
++Cflags: -I${includedir} -I${includedir}/drm -I${includedir}/freedreno
+ Requires.private: libdrm
+diff ... libdrm-2.4.73/intel/libdrm_intel.pc.in
+--- libdrm-2.4.73-ref/intel/libdrm_intel.pc.in	Thu Jun 30 10:28:51 2016
++++ libdrm-2.4.73/intel/libdrm_intel.pc.in	Sat Dec 31 00:51:51 2016
+@@ -7,5 +7,5 @@
+ Description: Userspace interface to intel kernel DRM services
+ Version: @PACKAGE_VERSION@
+ Requires: libdrm
+-Libs: -L${libdir} -ldrm_intel
+-Cflags: -I${includedir} -I${includedir}/libdrm
++Libs: -L${libdir} -R${libdir} -ldrm_intel
++Cflags: -I${includedir} -I${includedir}/drm
+diff ... libdrm-2.4.73/libdrm.pc.in
+--- libdrm-2.4.73-ref/libdrm.pc.in	Mon Jun 29 12:32:59 2015
++++ libdrm-2.4.73/libdrm.pc.in	Sat Dec 31 00:51:51 2016
+@@ -6,5 +6,5 @@
+ Name: libdrm
+ Description: Userspace interface to kernel DRM services
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -ldrm
+-Cflags: -I${includedir} -I${includedir}/libdrm
++Libs: -L${libdir} -R${libdir} -ldrm
++Cflags: -I${includedir} -I${includedir}/drm
+diff ... libdrm-2.4.73/libkms/libkms.pc.in
+--- libdrm-2.4.73-ref/libkms/libkms.pc.in	Thu Jun 30 10:28:51 2016
++++ libdrm-2.4.73/libkms/libkms.pc.in	Sat Dec 31 00:51:51 2016
+@@ -6,6 +6,6 @@
+ Name: libkms
+ Description: Library that abstract aways the different mm interface for kernel drivers
+ Version: 1.0.0
+-Libs: -L${libdir} -lkms
++Libs: -L${libdir} -R${libdir} -lkms
+ Cflags: -I${includedir}/libkms
+ Requires.private: libdrm
+diff ... libdrm-2.4.73/nouveau/libdrm_nouveau.pc.in
+--- libdrm-2.4.73-ref/nouveau/libdrm_nouveau.pc.in	Thu Jun 30 10:28:51 2016
++++ libdrm-2.4.73/nouveau/libdrm_nouveau.pc.in	Sat Dec 31 00:51:51 2016
+@@ -6,6 +6,6 @@
+ Name: libdrm_nouveau
+ Description: Userspace interface to nouveau kernel DRM services
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -ldrm_nouveau
+-Cflags: -I${includedir} -I${includedir}/libdrm -I${includedir}/libdrm/nouveau
++Libs: -L${libdir} -R${libdir} -ldrm_nouveau
++Cflags: -I${includedir} -I${includedir}/drm -I${includedir}/drm/nouveau
+ Requires.private: libdrm
+diff ... libdrm-2.4.73/omap/libdrm_omap.pc.in
+--- libdrm-2.4.73-ref/omap/libdrm_omap.pc.in	Mon Jun 29 12:32:59 2015
++++ libdrm-2.4.73/omap/libdrm_omap.pc.in	Sat Dec 31 00:51:51 2016
+@@ -6,6 +6,6 @@
+ Name: libdrm_omap
+ Description: Userspace interface to omap kernel DRM services
+ Version: 0.6
+-Libs: -L${libdir} -ldrm_omap
+-Cflags: -I${includedir} -I${includedir}/libdrm -I${includedir}/omap
++Libs: -L${libdir} -R${libdir} -ldrm_omap
++Cflags: -I${includedir} -I${includedir}/drm -I${includedir}/omap
+ Requires.private: libdrm
+diff ... libdrm-2.4.73/radeon/libdrm_radeon.pc.in
+--- libdrm-2.4.73-ref/radeon/libdrm_radeon.pc.in	Thu Jun 30 10:28:51 2016
++++ libdrm-2.4.73/radeon/libdrm_radeon.pc.in	Sat Dec 31 00:51:51 2016
+@@ -6,6 +6,6 @@
+ Name: libdrm_radeon
+ Description: Userspace interface to kernel DRM services for radeon
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -ldrm_radeon
+-Cflags: -I${includedir} -I${includedir}/libdrm
++Libs: -L${libdir} -R${libdir} -ldrm_radeon
++Cflags: -I${includedir} -I${includedir}/drm
+ Requires.private: libdrm
+diff ... libdrm-2.4.73/tegra/libdrm_tegra.pc.in
+--- libdrm-2.4.73-ref/tegra/libdrm_tegra.pc.in	Thu Jun 30 10:28:51 2016
++++ libdrm-2.4.73/tegra/libdrm_tegra.pc.in	Sat Dec 31 00:51:51 2016
+@@ -6,6 +6,6 @@
+ Name: libdrm_tegra
+ Description: Userspace interface to Tegra kernel DRM services
+ Version: @PACKAGE_VERSION@
+-Libs: -L${libdir} -ldrm_tegra
+-Cflags: -I${includedir} -I${includedir}/libdrm
++Libs: -L${libdir} -R${libdir} -ldrm_tegra
++Cflags: -I${includedir} -I${includedir}/drm
+ Requires.private: libdrm
