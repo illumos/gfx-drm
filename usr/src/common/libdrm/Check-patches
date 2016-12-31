@@ -89,8 +89,8 @@ diff_ref intel -name '*.c' > $chk/intel-drm.patch
 echo patches/omap.patch
 diff_ref omap -name '*.c' > $chk/omap.patch
 
-echo patches/rpath-pc.in.patch
-diff_ref . -name '*.pc.in' > $chk/rpath-pc.in.patch
+echo patches/pkgconfig-in.patch
+diff_ref . -name '*.pc.in' > $chk/pkgconfig-in.patch
 
 echo patches/incl-drm-drm-h.patch
 ( head -27 patches/incl-drm-drm-h.patch ;
