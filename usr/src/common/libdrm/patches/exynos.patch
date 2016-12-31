@@ -1,6 +1,6 @@
-diff ... libdrm-2.4.71/exynos/exynos_drm.c
---- libdrm-2.4.71-ref/exynos/exynos_drm.c	Thu Apr 21 09:40:06 2016
-+++ libdrm-2.4.71/exynos/exynos_drm.c	Sat Nov 19 21:07:12 2016
+diff ... libdrm-2.4.73/exynos/exynos_drm.c
+--- libdrm-2.4.73-ref/exynos/exynos_drm.c	Wed Aug 24 12:57:39 2016
++++ libdrm-2.4.73/exynos/exynos_drm.c	Sat Dec 31 12:27:53 2016
 @@ -35,7 +35,7 @@
  #include <unistd.h>
  
@@ -10,9 +10,9 @@ diff ... libdrm-2.4.71/exynos/exynos_drm.c
  
  #include <xf86drm.h>
  
-diff ... libdrm-2.4.71/exynos/exynos_fimg2d.c
---- libdrm-2.4.71-ref/exynos/exynos_fimg2d.c	Sun Jan 17 16:22:14 2016
-+++ libdrm-2.4.71/exynos/exynos_fimg2d.c	Sat Nov 19 21:07:12 2016
+diff ... libdrm-2.4.73/exynos/exynos_fimg2d.c
+--- libdrm-2.4.73-ref/exynos/exynos_fimg2d.c	Wed Aug 24 12:57:39 2016
++++ libdrm-2.4.73/exynos/exynos_fimg2d.c	Sat Dec 31 17:52:27 2016
 @@ -21,7 +21,7 @@
  #include <assert.h>
  
@@ -22,9 +22,35 @@ diff ... libdrm-2.4.71/exynos/exynos_fimg2d.c
  
  #include <xf86drm.h>
  
-diff ... libdrm-2.4.71/tests/exynos/exynos_fimg2d_test.c
---- libdrm-2.4.71-ref/tests/exynos/exynos_fimg2d_test.c	Sun Jan 17 16:22:14 2016
-+++ libdrm-2.4.71/tests/exynos/exynos_fimg2d_test.c	Sat Nov 19 21:07:12 2016
+@@ -698,9 +698,10 @@
+ 	if (negative)
+ 		negative = 1;
+ 
+-	if (src_w == dst_w && src_h == dst_h)
++	if (src_w == dst_w && src_h == dst_h) {
+ 		scale = 0;
+-	else {
++		scale_x = scale_y = 0; /* GCC warnings */
++	} else {
+ 		scale = 1;
+ 		scale_x = g2d_get_scaling(src_w, dst_w);
+ 		scale_y = g2d_get_scaling(src_h, dst_h);
+@@ -920,9 +921,10 @@
+ 	unsigned int scale, gem_space;
+ 	unsigned int scale_x, scale_y;
+ 
+-	if (src_w == dst_w && src_h == dst_h)
++	if (src_w == dst_w && src_h == dst_h) {
+ 		scale = 0;
+-	else {
++		scale_x = scale_y = 0; /* GCC warnings */
++	} else {
+ 		scale = 1;
+ 		scale_x = g2d_get_scaling(src_w, dst_w);
+ 		scale_y = g2d_get_scaling(src_h, dst_h);
+diff ... libdrm-2.4.73/tests/exynos/exynos_fimg2d_test.c
+--- libdrm-2.4.73-ref/tests/exynos/exynos_fimg2d_test.c	Wed Aug 24 12:57:39 2016
++++ libdrm-2.4.73/tests/exynos/exynos_fimg2d_test.c	Sat Dec 31 12:27:53 2016
 @@ -22,7 +22,7 @@
  #include <unistd.h>
  

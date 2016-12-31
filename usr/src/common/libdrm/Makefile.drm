@@ -26,7 +26,7 @@ ROOTLIBDIR64 =	$(ROOT)/usr/lib/xorg/$(MACH64)
 
 CPPFLAGS +=	-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE
 
-# Defines that would normally come from autoconf.  ook through
+# Defines that would normally come from autoconf.  Look through
 # libdrm-$(LIBDRM_VERS)/config.h.in when updating libdrm to
 # check for new ones we might need to define.
 CPPFLAGS +=	-DHAVE_ALLOCA_H
@@ -39,3 +39,6 @@ CPPFLAGS +=	-DMAJOR_IN_MKDEV
 CPPFLAGS +=	-I$(SRC)/uts/common \
 		-I$(SRC)/uts/common/drm \
 		-I$(LIBDRM_CMN_DIR)/include/drm
+
+# The libdrm code has lots of parentheses warnings.  Suppress.
+CERRWARN +=	-_gcc=-Wno-parentheses
