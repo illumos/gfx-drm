@@ -23,38 +23,32 @@
 # Copyright 2013 Nexenta Systems, Inc. All rights reserved.
 #
 
-#	Configuration variables for the runtime environment of the nightly
-# build script and other tools for construction and packaging of releases.
-# This script is sourced by 'nightly' and 'bldenv' to set up the environment.
-# See illumos-gate/usr/src/tools/env for details.
-export NIGHTLY_OPTIONS='-DCFlnpr'
+#	Configuration variables for the runtime environment of the
+# "buildenv" script, and construction and packaging of releases.
+# Note: gfx-drm does NOT contain cw tools etc, so turn OFF 't'
+# See also: BUILD_TOOLS, ONBLD_TOOLS below.
+export NIGHTLY_OPTIONS="-nrN +t"
 
 # CODEMGR_WS - where is your workspace
 export CODEMGR_WS=`git rev-parse --show-toplevel`
 
-# This is a variable for the rest of the script - GATE doesn't matter to
-# nightly itself.
-GATE=`basename ${CODEMGR_WS}`
-
 # Maximum number of dmake jobs.  Small WS -- keep it simple.
 export DMAKE_MAX_JOBS=4
 
-# You should not need to change the next three lines
-export ATLOG="$CODEMGR_WS/log"
-export LOGFILE="$ATLOG/nightly.log"
-export MACH="$(uname -p)"
-
 # where is the proto area etc.
+export MACH="$(uname -p)"
 export ROOT="$CODEMGR_WS/proto/root_${MACH}"
 export SRC="$CODEMGR_WS/usr/src"
 export MULTI_PROTO="no"
 
 #
 # Build environment variables, including version info for mcs, etc.
-# We want the git changeset hash.
+# We want the git changeset hash.  GATE, GIT_REV are just a locals.
+GATE=`basename ${CODEMGR_WS}`
 GIT_REV=`git rev-parse --short=10 HEAD`
 export VERSION="${GATE}:${GIT_REV}"
 export ONNV_BUILDNUM=152
+export PKGVERS_BRANCH=2016.1
 
 # export RELEASE='5.11'
 # export RELEASE_DATE='October 2007'
