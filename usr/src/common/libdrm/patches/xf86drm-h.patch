@@ -25,10 +25,9 @@
 # or other dealings in this Software without prior written authorization
 # of the copyright holder.
 
-diff --git a/xf86drm.h b/xf86drm.h
-index 76eb94e..6a14120 100644
---- a/xf86drm.h
-+++ b/xf86drm.h
+diff ... libdrm-2.4.74/xf86drm.h
+--- libdrm-2.4.74-ref/xf86drm.h	Tue Nov 29 06:15:10 2016
++++ libdrm-2.4.74/xf86drm.h	Sat Dec 31 19:13:17 2016
 @@ -472,6 +472,17 @@
  #endif /* architecture */
  #endif /* __GNUC__ >= 2 */
@@ -47,7 +46,7 @@ index 76eb94e..6a14120 100644
  #ifndef DRM_CAS
  #define DRM_CAS(lock,old,new,ret) do { ret=1; } while (0) /* FAST LOCK FAILS */
  #endif
-@@ -796,6 +807,17 @@
+@@ -801,6 +812,17 @@
  extern int drmGetDevices(drmDevicePtr devices[], int max_devices);
  extern void drmFreeDevices(drmDevicePtr devices[], int count);
  

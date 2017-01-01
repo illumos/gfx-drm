@@ -22,12 +22,12 @@ include $(SRC)/Makefile.master
 FETCH=	$(SRC)/tools/userland-fetch
 
 # See also: ./Makefile.drm LIBDRM_VERS
-LIBDRM_VERS=2.4.73
+LIBDRM_VERS=2.4.74
 
 LIBDRM_DIR=libdrm-$(LIBDRM_VERS)
 LIBDRM_ARCHIVE=$(LIBDRM_DIR).tar.bz2
 LIBDRM_URL=http://dri.freedesktop.org/libdrm/$(LIBDRM_ARCHIVE)
-LIBDRM_HASH=sha256:96bfd39242fe168017d95f22e141645a35591f5902a7d98c2fa4ca8c31df5e4d
+LIBDRM_HASH=sha256:d80dd5a76c401f4c8756dcccd999c63d7e0a3bad258d96a829055cfd86ef840b
 
 def all install install_h: .patched check
 

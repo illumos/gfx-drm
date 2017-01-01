@@ -25,4 +25,3 @@ diff ... libdrm-2.4.67/libdrm_lists.h
  				     (__temp)->__head.next, __head))
  
  #define DRMLISTJOIN(__list, __join) if (!DRMLISTEMPTY(__list)) {	\
-
