@@ -1,6 +1,6 @@
-diff ... libdrm-2.4.71/xf86drm.c
---- libdrm-2.4.71-ref/xf86drm.c	Wed Jul 20 19:42:21 2016
-+++ libdrm-2.4.71/xf86drm.c	Sun Nov 20 11:16:08 2016
+diff ... libdrm-2.4.74/xf86drm.c
+--- libdrm-2.4.74-ref/xf86drm.c	Tue Nov 29 06:15:10 2016
++++ libdrm-2.4.74/xf86drm.c	Sat Dec 31 19:13:57 2016
 @@ -98,6 +98,11 @@
  #endif
  #endif /* __OpenBSD__ */
@@ -172,3 +172,12 @@ diff ... libdrm-2.4.71/xf86drm.c
  
  void drmFreeDevice(drmDevicePtr *device)
  {
+@@ -3349,6 +3400,8 @@
+ 
+     fclose(f);
+     return device_name;
++#elif defined(__sun)
++    return(_sun_drmGetMinorNameForFD(fd, -1));
+ #else
+ #warning "Missing implementation of drmGetDeviceNameFromFd2"
+     return NULL;

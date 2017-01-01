@@ -15,9 +15,8 @@
 
 # This make include is used in $SRC/lib/libdrm/*
 #
-# See also: ./Makefile LIBDRM_VERS, ./Check-patches, and
-# $SRC/pkg/manifests/x11-library-libdrm.mf
-LIBDRM_VERS=2.4.73
+# See also: ./Makefile LIBDRM_VERS, ./Check-patches
+LIBDRM_VERS=2.4.74
 
 LIBDRM_CMN_DIR=$(SRC)/common/libdrm/libdrm-$(LIBDRM_VERS)
 

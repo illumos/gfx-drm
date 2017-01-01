@@ -235,7 +235,6 @@ _sun_drm_get_pci_info(char *path, drmPciDeviceInfo *pcii)
 	char pathbuf[MAXPATHLEN];
 	di_node_t node;
 	char *s;
-	char *propstr = NULL;
 	int *propval = NULL;
 	int ret = -EINVAL;
 

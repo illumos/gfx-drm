@@ -29,6 +29,8 @@ include $(SRC)/Makefile.master
 # include $(SRC)/Makefile.buildnum
 ONNV_BUILDNUM= 151
 
+# Get LIBDRM_VERS
+include $(SRC)/common/libdrm/Makefile.drm
 
 #
 # Make sure we're getting a consistent execution environment for the
@@ -171,6 +173,7 @@ PKGMOG_DEFINES= \
 	ARCH=$(PKGMACH) \
 	ARCH32=$($(PKGMACH)_ARCH32) \
 	ARCH64=$($(PKGMACH)_ARCH64) \
+	LIBDRM_VERS=$(LIBDRM_VERS) \
 	PKGVERS_COMPONENT=$(PKGVERS_COMPONENT) \
 	PKGVERS_BUILTON=$(PKGVERS_BUILTON) \
 	PKGVERS_BRANCH=$(PKGVERS_BRANCH) \
