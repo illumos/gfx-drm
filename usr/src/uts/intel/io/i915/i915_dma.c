@@ -1489,7 +1489,7 @@ int i915_driver_load(struct drm_device *dev, unsigned long flags)
 	if (HAS_POWER_WELL(dev))
 		i915_init_power_well(dev);
 
-	if (IS_GEN7(dev))
+	if (IS_GEN6(dev) || IS_GEN7(dev))
 		i915_try_reset = true;
 
 	dev_priv->gpu_hang = 0;
