@@ -1098,7 +1098,7 @@ i915_quiesce(dev_info_t *dip)
 		i915_gem_lastclose(dev);
 
 		if (dev_priv->gtt.scratch_page)
-			teardown_scratch_page(dev);
+			i915_teardown_scratch_page(dev);
 
 		if (MDB_TRACK_ENABLE) {
 			struct batch_info_list *r_list, *list_temp;

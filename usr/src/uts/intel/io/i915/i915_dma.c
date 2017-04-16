@@ -1510,7 +1510,6 @@ out_mtrrfree:
 out_rmmap:
 	drm_ioremapfree(dev_priv->regs);
 put_bridge:
-free_priv:
 	kfree(dev_priv, sizeof(struct drm_i915_private));
 	return ret;
 }
@@ -1573,7 +1572,7 @@ int i915_driver_unload(struct drm_device *dev)
 			i915_free_hws(dev);
 		i915_gem_lastclose(dev);
 		if (dev_priv->gtt.scratch_page)
-			teardown_scratch_page(dev);
+			i915_teardown_scratch_page(dev);
 		if (dev_priv->fbcon_obj != NULL) {
 			i915_gem_free_object(&dev_priv->fbcon_obj->base);
 			dev_priv->fbcon_obj = NULL;

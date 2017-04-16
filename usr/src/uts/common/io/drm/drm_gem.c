@@ -759,12 +759,16 @@ drm_gem_create_mmap_offset(struct drm_gem_object *obj)
 void
 drm_gem_mmap(struct drm_gem_object *obj, pfn_t pfn)
 {
+	ASSERT(obj->gtt_map_kaddr != NULL);
+	/* Does hat_devload() */
 	gfxp_load_kernel_space(pfn, obj->real_size, GFXP_MEMORY_WRITECOMBINED, obj->gtt_map_kaddr);
 }
 
 void
 drm_gem_release_mmap(struct drm_gem_object *obj)
 {
+	ASSERT(obj->gtt_map_kaddr != NULL);
+	/* Does hat_unload() */
 	gfxp_unload_kernel_space(obj->gtt_map_kaddr, obj->real_size);
 }
 

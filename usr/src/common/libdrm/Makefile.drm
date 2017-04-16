@@ -39,5 +39,6 @@ CPPFLAGS +=	-I$(SRC)/uts/common \
 		-I$(SRC)/uts/common/drm \
 		-I$(LIBDRM_CMN_DIR)/include/drm
 
-# The libdrm code has lots of parentheses warnings.  Suppress.
+# The libdrm code has lots of warnings.  Just suppress.
 CERRWARN +=	-_gcc=-Wno-parentheses
+CERRWARN +=	-_gcc=-Wno-unused-function

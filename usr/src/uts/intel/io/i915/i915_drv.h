@@ -1837,8 +1837,8 @@ void i915_gem_gtt_finish_object(struct drm_i915_gem_object *obj);
 int i915_gem_init_global_gtt(struct drm_device *dev);
 void i915_gem_setup_global_gtt(struct drm_device *dev, unsigned long start,
 			       unsigned long mappable_end, unsigned long end);
-int setup_scratch_page(struct drm_device *dev);
-void teardown_scratch_page(struct drm_device *dev);
+int i915_setup_scratch_page(struct drm_device *dev);
+void i915_teardown_scratch_page(struct drm_device *dev);
 int i915_gem_gtt_init(struct drm_device *dev);
 void intel_rw_gtt(struct drm_device *dev, size_t size,
 		uint32_t gtt_offset, void *gttp, uint32_t type);

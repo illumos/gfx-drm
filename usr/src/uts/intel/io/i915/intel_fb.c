@@ -92,7 +92,6 @@ static int intelfb_create(struct drm_fb_helper *helper,
 
 out_unpin:
 	i915_gem_object_unpin(obj);
-out_unref:
 	drm_gem_object_unreference(&obj->base);
 	mutex_unlock(&dev->struct_mutex);
 out:

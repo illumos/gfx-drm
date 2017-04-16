@@ -99,8 +99,16 @@ drm_devmap_map(devmap_cookie_t dhc, dev_t dev_id, uint_t flags,
 	mutex_enter(&dev->struct_mutex);
 	dhp = (devmap_handle_t *)dhc;
 	cp = (struct ddi_umem_cookie *)dhp->dh_cookie;
-	cp->cook_refcnt = 1;
+	ASSERT(cp->cook_refcnt == 0);
+	cp->cook_refcnt++;
 	mutex_exit(&dev->struct_mutex);
+
+	/*
+	 * This is the first reference via this devmap handle.
+	 * If needed, we could take a ref on some device-internal
+	 * object here, and release it in drm_devmap_unmap().
+	 */
+	DRM_DEBUG("first ref dev=%p cp=%p", dev, cp);
 
 	*new_priv = dev;
 	return (0);
@@ -138,6 +146,7 @@ drm_devmap_unmap(devmap_cookie_t dhc, void *pvtp, offset_t off, size_t len,
 	devmap_handle_t	*ndhp;
 	struct ddi_umem_cookie	*cp;
 	struct ddi_umem_cookie	*ncp;
+	boolean_t last_ref = B_FALSE;
 
 	dhp = (devmap_handle_t *)dhc;
 	dev = (struct drm_device *)pvtp;
@@ -152,7 +161,6 @@ drm_devmap_unmap(devmap_cookie_t dhc, void *pvtp, offset_t off, size_t len,
 		*new_pvtp1 = dev;
 		ASSERT(ncp == cp);
 	}
-
 	if (new_dhp2 != NULL) {
 		ndhp = (devmap_handle_t *)new_dhp2;
 		ncp = (struct ddi_umem_cookie *)ndhp->dh_cookie;
@@ -161,16 +169,28 @@ drm_devmap_unmap(devmap_cookie_t dhc, void *pvtp, offset_t off, size_t len,
 		ASSERT(ncp == cp);
 	}
 
-	/* FIXME: dh_cookie should not be released here. */
-#if 0
+	ASSERT(cp->cook_refcnt > 0);
 	cp->cook_refcnt--;
 	if (cp->cook_refcnt == 0) {
-		gfxp_umem_cookie_destroy(dhp->dh_cookie);
-		dhp->dh_cookie = NULL;
+		last_ref = B_TRUE;
 	}
-#endif
 
 	mutex_exit(&dev->struct_mutex);
+
+	if (last_ref) {
+		/*
+		 * This is the last reference to this device
+		 * via this devmap handle, so drop whatever
+		 * reference was taken in drm_gem_map().
+		 *
+		 * Previous versions of this code released
+		 * dhp->dh_cookie in here, but that's handled
+		 * outside of devmap_map/_unmap.  Given that,
+		 * we probably don't need this callback at all,
+		 * though it's somewhat useful for debugging.
+		 */
+		DRM_DEBUG("last ref dev=%p cp=%p", dev, cp);
+	}
 }
 
 static struct devmap_callback_ctl drm_devmap_callbacks = {
@@ -194,14 +214,17 @@ __find_local_map(struct drm_device *dev, offset_t offset)
 }
 
 static int
-drm_gem_map(devmap_cookie_t dhp, dev_t dev, uint_t flags, offset_t off,
-		size_t len, void **pvtp)
+drm_gem_map(devmap_cookie_t dhc, dev_t dev_id, uint_t flags,
+    offset_t off, size_t len, void **pvtp)
 {
-	_NOTE(ARGUNUSED(dhp, flags, len))
+	_NOTE(ARGUNUSED(flags, len))
 
-	struct drm_device *drm_dev;
+	devmap_handle_t *dhp;
+	struct ddi_umem_cookie *cp;
+	struct drm_gem_object *obj;
+	struct drm_device *dev;
 	struct drm_minor *minor;
-	int minor_id = DRM_DEV2MINOR(dev);
+	int minor_id = DRM_DEV2MINOR(dev_id);
 	drm_local_map_t *map = NULL;
 
 	minor = idr_find(&drm_minors_idr, minor_id);
@@ -210,23 +233,48 @@ drm_gem_map(devmap_cookie_t dhp, dev_t dev, uint_t flags, offset_t off,
 	if (!minor->dev)
 		return (ENODEV);
 
-	drm_dev = minor->dev;
+	dev = minor->dev;
 
-	mutex_enter(&drm_dev->struct_mutex);
-	map = __find_local_map(drm_dev, off);
+	mutex_enter(&dev->struct_mutex);
+	map = __find_local_map(dev, off);
 	if (!map) {
-		mutex_exit(&drm_dev->struct_mutex);
+		mutex_exit(&dev->struct_mutex);
 		*pvtp = NULL;
 		return (DDI_EINVAL);
 	}
 
-	mutex_exit(&drm_dev->struct_mutex);
+	dhp = (devmap_handle_t *)dhc;
+	cp = (struct ddi_umem_cookie *)dhp->dh_cookie;
+	ASSERT(cp->cook_refcnt == 0);
+	cp->cook_refcnt++;
 
-	*pvtp = map->handle;
+	mutex_exit(&dev->struct_mutex);
+
+	/*
+	 * First reference via this devmap handle.  Take a ref. on the
+	 * gem object, and release it in drm_gem_unmap when last ref
+	 * from this devmap handle goes away.   This corresponds to
+	 * code in drm_gem_vm_open() in the Linux driver.
+	 */
+	obj = map->handle;
+	drm_gem_object_reference(obj);
+
+	DRM_DEBUG("first ref obj=%p cp=%p", obj, cp);
+
+	*pvtp = obj;
 
 	return (DDI_SUCCESS);
 }
 
+/*
+ * This is called by segdev_fault() to fault in pages for the given
+ * offset+len.  If the (GTT) device range has been configured with a
+ * fake offset for mmap, call the device's gem_fault handler to setup
+ * the GTT resources for this mapping.
+ *
+ * We should always call devmap_load(), as we're just interposing
+ * on these fault calls to (sometimes) setup GTT resources.
+ */
 static int
 drm_gem_map_access(devmap_cookie_t dhp, void *pvt, offset_t offset, size_t len,
 		uint_t type, uint_t rw)
@@ -236,20 +284,30 @@ drm_gem_map_access(devmap_cookie_t dhp, void *pvt, offset_t offset, size_t len,
 	struct gem_map_list *seg;
 
 	obj = (struct drm_gem_object *)pvt;
-	if (obj == NULL) {
-		dev = NULL;	/* avoid "used uninitialized" warning */
-		goto next;
+
+	/*
+	 * Only call the driver fault handler after gtt_map_kaddr
+	 * has been set, i.e. by i915_gem_mmap_gtt(), or we'll
+	 * panic in trying to map pages at addr zero.
+	 */
+	if (obj != NULL && obj->gtt_map_kaddr != NULL) {
+		dev = obj->dev;
+		/* Could also check map->callback */
+		if (dev->driver->gem_fault != NULL)
+			dev->driver->gem_fault(obj);
 	}
 
-	dev = obj->dev;
-	if (dev->driver->gem_fault != NULL)
-		dev->driver->gem_fault(obj);
-
-next:
+	/* Internal devmap_default_access(9F) */
 	if (devmap_load(dhp, offset, len, type, rw)) {
 		return (DDI_FAILURE);
 	}
+
+	/*
+	 * Save list of loaded translations for later use in
+	 * (i.e.) i915_gem_release_mmap()
+	 */
 	if (obj != NULL) {
+		dev = obj->dev;
 		seg = drm_alloc(sizeof (struct gem_map_list), DRM_MEM_MAPS);
 		if (seg != NULL) {
 			mutex_lock(&dev->page_fault_lock);
@@ -263,46 +321,111 @@ next:
 	return (DDI_SUCCESS);
 }
 
-static void
-drm_gem_unmap(devmap_cookie_t dhp, void *pvtp, offset_t off, size_t len,
-		devmap_cookie_t new_dhp1, void **newpvtp1,
-		devmap_cookie_t new_dhp2, void **newpvtp2)
+static int
+drm_gem_dup(devmap_cookie_t dhc, void *pvt, devmap_cookie_t new_dhc,
+    void **new_pvtp)
 {
+	_NOTE(ARGUNUSED(new_dhc))
+
+	struct drm_gem_object *obj = pvt;
+	struct drm_device *dev = obj->dev;
+	devmap_handle_t *dhp;
+	struct ddi_umem_cookie *cp;
+
+	mutex_enter(&dev->struct_mutex);
+	dhp = (devmap_handle_t *)dhc;
+	cp = (struct ddi_umem_cookie *)dhp->dh_cookie;
+	cp->cook_refcnt++;
+	mutex_exit(&dev->struct_mutex);
+
+	*new_pvtp = obj;
+	return (0);
+}
+
+static void
+drm_gem_unmap(devmap_cookie_t dhc, void *pvt, offset_t off, size_t len,
+		devmap_cookie_t new_dhp1, void **new_pvtp1,
+		devmap_cookie_t new_dhp2, void **new_pvtp2)
+{
+	devmap_handle_t *dhp = (devmap_handle_t *)dhc;
+	devmap_handle_t	*ndhp;
+	struct ddi_umem_cookie *cp;
+	struct ddi_umem_cookie *ncp;
 	struct drm_device *dev;
 	struct drm_gem_object *obj;
 	struct gem_map_list *entry, *temp;
+	boolean_t last_ref = B_FALSE;
 
-	_NOTE(ARGUNUSED(dhp, pvtp, off, len, new_dhp1, newpvtp1))
-	_NOTE(ARGUNUSED(new_dhp2, newpvtp2))
+	_NOTE(ARGUNUSED(off, len))
 
-	obj = (struct drm_gem_object *)pvtp;
+	obj = (struct drm_gem_object *)pvt;
 	if (obj == NULL)
 		return;
 
 	dev = obj->dev;
 
+	/*
+	 * Unload what drm_gem_map_access loaded.
+	 *
+	 * XXX: The devmap_unload() here is probably unnecessary,
+	 * as segdev_unmap() has done a hat_unload() for the
+	 * entire segment by the time we get here.
+	 */
 	mutex_lock(&dev->page_fault_lock);
-	if (list_empty(&obj->seg_list)) {
-		mutex_unlock(&dev->page_fault_lock);
-		return;
+	if (!list_empty(&obj->seg_list)) {
+		list_for_each_entry_safe(entry, temp, struct gem_map_list,
+		    &obj->seg_list, head) {
+			(void) devmap_unload(entry->dhp, entry->mapoffset,
+			    entry->maplen);
+			list_del(&entry->head);
+			drm_free(entry, sizeof (struct gem_map_list), DRM_MEM_MAPS);
+		}
 	}
-
-	list_for_each_entry_safe(entry, temp, struct gem_map_list,
-	    &obj->seg_list, head) {
-		(void) devmap_unload(entry->dhp, entry->mapoffset,
-		    entry->maplen);
-		list_del(&entry->head);
-		drm_free(entry, sizeof (struct gem_map_list), DRM_MEM_MAPS);
-	}
-
 	mutex_unlock(&dev->page_fault_lock);
+
+	/*
+	 * Manage dh_cookie ref counts
+	 */
+	mutex_enter(&dev->struct_mutex);
+	cp = (struct ddi_umem_cookie *)dhp->dh_cookie;
+	if (new_dhp1 != NULL) {
+		ndhp = (devmap_handle_t *)new_dhp1;
+		ncp = (struct ddi_umem_cookie *)ndhp->dh_cookie;
+		ncp->cook_refcnt++;
+		*new_pvtp1 = obj;
+		ASSERT(ncp == cp);
+	}
+	if (new_dhp2 != NULL) {
+		ndhp = (devmap_handle_t *)new_dhp2;
+		ncp = (struct ddi_umem_cookie *)ndhp->dh_cookie;
+		ncp->cook_refcnt++;
+		*new_pvtp2 = obj;
+		ASSERT(ncp == cp);
+	}
+	ASSERT(cp->cook_refcnt > 0);
+	cp->cook_refcnt--;
+	if (cp->cook_refcnt == 0) {
+		last_ref = B_TRUE;
+	}
+	mutex_exit(&dev->struct_mutex);
+
+	if (last_ref) {
+		/*
+		 * This is the last reference to this GEM object
+		 * via this devmap handle, so drop the reference
+		 * taken in drm_gem_map().  This corresponds to
+		 * code in drm_gem_vm_close() in the Linux driver.
+		 */
+		DRM_DEBUG("last ref obj=%p cp=%p", obj, cp);
+		drm_gem_object_unreference(obj);
+	}
 }
 
 static struct devmap_callback_ctl drm_gem_map_ops = {
 	DEVMAP_OPS_REV,		/* devmap_ops version number */
 	drm_gem_map,		/* devmap_ops map routine */
 	drm_gem_map_access,	/* devmap_ops access routine */
-	NULL,			/* devmap_ops dup routine */
+	drm_gem_dup,		/* devmap_ops dup routine */
 	drm_gem_unmap,		/* devmap_ops unmap routine */
 };
 
@@ -411,17 +534,12 @@ static int
 __devmap_gem(struct drm_device *dev, devmap_cookie_t dhp,
     struct drm_local_map *map, size_t *maplen)
 {
-	struct devmap_callback_ctl *callbackops = NULL;
 	int ret;
-
-	if (map->callback == 1) {
-		callbackops = &drm_gem_map_ops;
-	}
 
 	if (!map->umem_cookie)
 		return (-EINVAL);
 
-	ret = gfxp_devmap_umem_setup(dhp, dev->devinfo, callbackops,
+	ret = gfxp_devmap_umem_setup(dhp, dev->devinfo, &drm_gem_map_ops,
 	    map->umem_cookie, 0, map->size, PROT_ALL,
 	    IOMEM_DATA_UC_WR_COMBINE | DEVMAP_ALLOW_REMAP, &gem_dev_attr);
 	if (ret != DDI_SUCCESS) {

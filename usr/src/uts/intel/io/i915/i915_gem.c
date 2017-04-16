@@ -3625,7 +3625,7 @@ int i915_gem_init(struct drm_device *dev)
 		if (!dev_priv->fbcon_obj) {
 			DRM_ERROR("failed to allocate framebuffer");
 			mutex_unlock(&dev->struct_mutex);
-			teardown_scratch_page(dev);
+			i915_teardown_scratch_page(dev);
 			return (-ENOMEM);
 		}
 
@@ -3637,7 +3637,7 @@ int i915_gem_init(struct drm_device *dev)
 		if (ret) {
 			DRM_ERROR("failed to pin fb ret %d", ret);
 			mutex_unlock(&dev->struct_mutex);
-			teardown_scratch_page(dev);
+			i915_teardown_scratch_page(dev);
 			i915_gem_free_object(&dev_priv->fbcon_obj->base);
 			return ret;
 		}

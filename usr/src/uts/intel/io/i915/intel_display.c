@@ -7619,7 +7619,6 @@ cleanup_pending:
 	drm_gem_object_unreference(&obj->base);
 	mutex_unlock(&dev->struct_mutex);
 
-cleanup:
 	spin_lock_irqsave(&dev->event_lock, flags);
 	intel_crtc->unpin_work = NULL;
 	spin_unlock_irqrestore(&dev->event_lock, flags);

@@ -21,8 +21,16 @@
 #
 ONBLD_TOOLS=/opt/onbld
 
+# Do both debug and non-debug build in uts, in that order, so
+# (a) we know the debug code builds, and (b) install non-debug.
 install: FRC
+	$(ONBLD_TOOLS)/bin/bldenv -d myenv.sh \
+	"cd usr/src/uts ; make install"
 	$(ONBLD_TOOLS)/bin/bldenv myenv.sh \
+	"cd usr/src ; make install"
+
+debug: FRC
+	$(ONBLD_TOOLS)/bin/bldenv -d myenv.sh \
 	"cd usr/src ; make install"
 
 clean: FRC
