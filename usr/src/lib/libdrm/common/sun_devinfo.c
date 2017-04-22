@@ -23,7 +23,7 @@
  * Use is subject to license terms.
  */
 /*
- * Copyright 2016 Gordon W. Ross
+ * Copyright 2017 Gordon W. Ross
  */
 
 /*
@@ -81,70 +81,42 @@ struct search_args {
 	int s_minor;
 };
 
-static int find_dev(di_node_t, void *);
-static int find_minor(di_node_t, di_minor_t, struct search_args *);
-
 static int _sun_drm_major; /* cache */
 
-int _sun_drm_get_major(void)
+/*
+ * Search callback function called for each minor node under
+ * some device that was found to be of possible interest.
+ * Return non-zero if match found.
+ */
+static int
+find_minor(di_node_t node, di_minor_t minor, struct search_args *sargs)
 {
-	struct stat sbuf;
-	dev_t dev = 0;
-	char *path;
-	int i, ret;
+	char	*path;
+	dev_t	devt;
+	int	ret;
 
-	if (_sun_drm_major != 0)
-		return (_sun_drm_major);
+	devt = di_minor_devt(minor);
 
-	for (i = 0; i < DRM_MAX_MINOR; i++) {
-		ret = _sun_drm_find_device(i, &path);
-		if (ret != 0)
-			continue;
-		ret = stat(path, &sbuf);
-		free(path);
-		if (ret != 0)
-			continue;
-		if (!S_ISCHR(sbuf.st_mode))
-			continue;
-		dev = major(sbuf.st_rdev);
-		if (dev != 0) {
-			_sun_drm_major = dev;
-			return (dev);
-		}
-	}
+	/* Does the caller want a specific minor number? */
+	if (sargs->s_minor >= 0 &&
+	    sargs->s_minor != minor(devt))
+		return (0);
 
 	/*
-	 * No devices found?  No way to return errors here,
-	 * so just return an impossible value, and let
-	 * later calls like open fail.
+	 * get device minor node path
+	 * Note: allocates path
 	 */
-	return (MAXMAJ32);
-}
+	if ((path = di_devfs_minor_path(minor)) == NULL)
+		return (0);
+	ret = asprintf(&sargs->s_path, "/devices%s", path);
+	di_devfs_path_free(path);
 
-int
-_sun_drm_find_device(int min, char **pathp)
-{
-	struct search_args sargs;
-	di_node_t root_node;
+	if (ret < 0) {
+		free(sargs->s_path);
+		return (0);
+	}
 
-	root_node = di_init("/", DINFOCPYALL);
-	if (root_node == DI_NODE_NIL)
-		return (-errno);
-
-	memset(&sargs, 0, sizeof (sargs));
-
-	di_walk_node(root_node, DI_WALK_CLDFIRST, &sargs, find_dev);
-	di_fini(root_node);
-
-	if (sargs.s_path == NULL)
-		return (-ENOENT);
-
-	if (pathp != NULL)
-		*pathp = sargs.s_path;
-	else
-		free(sargs.s_path);
-
-	return (0);
+	return (1);
 }
 
 /*
@@ -186,42 +158,134 @@ find_dev(di_node_t node, void *vargs)
 }
 
 /*
- * Search function called for each minor node under some device
- * that was found to be of likely interest above.
- * Return non-zero if match found.
+ * Helper function for xf86drm.c
+ *	drmGetMinorNameForFD()
+ *	drmParseSubsystemType()
+ *	drmParsePciBusInfo()
+ *	drmParsePciDeviceInfo()
+ *
+ * Given a device minor number, find the /devices path.
+ * Returns malloc'ed memory at *pathp, caller frees.
  */
-static int
-find_minor(di_node_t node, di_minor_t minor, struct search_args *sargs)
+int
+_sun_drm_find_device(int min, char **pathp)
 {
-	char	*path;
-	dev_t	devt;
-	int	ret;
+	struct search_args sargs;
+	di_node_t root_node;
 
-	devt = di_minor_devt(minor);
+	root_node = di_init("/", DINFOCPYALL);
+	if (root_node == DI_NODE_NIL)
+		return (-errno);
 
-	/* Does the caller want a specific minor number? */
-	if (sargs->s_minor >= 0 &&
-	    sargs->s_minor != minor(devt))
-		return (0);
+	memset(&sargs, 0, sizeof (sargs));
 
-	/*
-	 * get device minor node path
-	 * Note: allocates path
-	 */
-	if ((path = di_devfs_minor_path(minor)) == NULL)
-		return (0);
-	ret = asprintf(&sargs->s_path, "/devices%s", path);
-	di_devfs_path_free(path);
+	di_walk_node(root_node, DI_WALK_CLDFIRST, &sargs, find_dev);
+	di_fini(root_node);
 
-	if (ret < 0) {
-		free(sargs->s_path);
-		return (0);
-	}
+	if (sargs.s_path == NULL)
+		return (-ENOENT);
 
-	return (1);
+	if (pathp != NULL)
+		*pathp = sargs.s_path;
+	else
+		free(sargs.s_path);
+
+	return (0);
 }
 
 /*
+ * Helper function for DRM_MAJOR in xf86drm.c
+ * Return the major number assigned to the drm driver.
+ */
+int
+_sun_drm_get_major(void)
+{
+	struct stat sbuf;
+	dev_t dev = 0;
+	char *path;
+	int i, ret;
+
+	if (_sun_drm_major != 0)
+		return (_sun_drm_major);
+
+	for (i = 0; i < DRM_MAX_MINOR; i++) {
+		ret = _sun_drm_find_device(i, &path);
+		if (ret != 0)
+			continue;
+		ret = stat(path, &sbuf);
+		free(path);
+		if (ret != 0)
+			continue;
+		if (!S_ISCHR(sbuf.st_mode))
+			continue;
+		dev = major(sbuf.st_rdev);
+		if (dev != 0) {
+			_sun_drm_major = dev;
+			return (dev);
+		}
+	}
+
+	/*
+	 * No devices found?  No way to return errors here,
+	 * so just return an impossible value, and let
+	 * later calls like open fail.
+	 */
+	return (MAXMAJ32);
+}
+
+/*
+ * Helper function for drmParseSubsystemType()
+ * Returns one of: DRM_BUS_PCI, ... or -EINVAL.
+ * Our only driver implementations currently
+ * are on PCI.  Others todo.
+ */
+int
+_sun_drm_get_subsystem(char *path)
+{
+	char *p;
+	int err;
+
+	p = path;
+	if (strncmp(p, "/devices/", 9) == 0)
+		p += 8;
+	if (strncmp(p, "/pci", 4) == 0)
+		err = DRM_BUS_PCI;
+	else
+		err = -EINVAL;
+
+	return (err);
+}
+
+/*
+ * Helper function for drmParsePciBusInfo()
+ *
+ * Get PCI bus info for the give device path.
+ */
+int
+_sun_drm_get_pci_bus_info(char *path, drmPciBusInfo *info)
+{
+	int n, bus, slot, unit;
+
+	/* Skip the /devices prefix, if present. */
+	if (strncmp(path, "/devices/", 9) == 0)
+		path += 8; /* the next slash */
+
+	n = sscanf(path, "/pci@%d,%d/display@%d:",
+	    &bus, &slot, &unit);
+	if (n != 3)
+		return (-EINVAL);
+
+	info->domain = 0;
+	info->bus = bus;
+	info->dev = slot;
+	info->func = unit;
+
+	return (0);
+}
+
+/*
+ * Helper function for drmParsePciDeviceInfo()
+ *
  * Get PCI data for the give device path.
  *
  * Note path given is a full minor under /devices i.e.
@@ -230,7 +294,7 @@ find_minor(di_node_t node, di_minor_t minor, struct search_args *sargs)
  *	/pci@0,0/display@2
  */
 int
-_sun_drm_get_pci_info(char *path, drmPciDeviceInfo *pcii)
+_sun_drm_get_pci_dev_info(char *path, drmPciDeviceInfo *pcii)
 {
 	char pathbuf[MAXPATHLEN];
 	di_node_t node;
@@ -252,35 +316,35 @@ _sun_drm_get_pci_info(char *path, drmPciDeviceInfo *pcii)
 	 */
 	node = di_init(pathbuf, DINFOCPYALL);
 	if (node == DI_NODE_NIL)
-		return -EINVAL;
+		return (-EINVAL);
 
 	/*
 	 * Get the various PCI properties.
 	 * Only the first two are required.
 	 */
-	memset(pcii, 0, sizeof(*pcii));
+	memset(pcii, 0, sizeof (*pcii));
 	if (di_prop_lookup_ints(DDI_DEV_T_ANY, node,
-				"vendor-id", &propval) > 0)
+	    "vendor-id", &propval) > 0)
 		pcii->vendor_id = (uint16_t)*propval;
 	else
 		goto out;
 
 	if (di_prop_lookup_ints(DDI_DEV_T_ANY, node,
-				"device-id", &propval) > 0)
+	    "device-id", &propval) > 0)
 		pcii->device_id = (uint16_t)*propval;
 	else
 		goto out;
 
 	if (di_prop_lookup_ints(DDI_DEV_T_ANY, node,
-				"subsystem-vendor-id", &propval) > 0)
+	    "subsystem-vendor-id", &propval) > 0)
 		pcii->subvendor_id = (uint16_t)*propval;
 
 	if (di_prop_lookup_ints(DDI_DEV_T_ANY, node,
-				"subsystem-id", &propval) > 0)
+	    "subsystem-id", &propval) > 0)
 		pcii->subdevice_id = (uint16_t)*propval;
 
 	if (di_prop_lookup_ints(DDI_DEV_T_ANY, node,
-				"revision-id", &propval) > 0)
+	    "revision-id", &propval) > 0)
 		pcii->revision_id = (uint16_t)*propval;
 
 	ret = 0;

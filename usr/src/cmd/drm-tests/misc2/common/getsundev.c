@@ -43,7 +43,8 @@
 
 #include "xf86drm.h"
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	drmPciBusInfo pci_bus;
 	drmPciDeviceInfo pci_dev;
@@ -68,39 +69,32 @@ int main(int argc, char **argv)
 		printf("Found device: %s\n", path);
 	}
 
-	ret = _sun_drmParseSubsystemType(maj, min);
-	if (ret != DRM_BUS_PCI) {
-		printf("FAIL: _sun_drmParseSubsystemType(%d, %d) -> %d\n",
-		       maj, min, ret);
-		failures++;
-	}
-
-	ret = _sun_drmParsePciBusInfo(maj, min, &pci_bus);
+	ret = _sun_drm_get_pci_bus_info(path, &pci_bus);
 	if (ret) {
-		printf("FAIL: _sun_drmParsePciBusInfo(%d, %d, &) -> %d\n",
-		       maj, min, ret);
+		printf("FAIL: _sun_drm_get_pci_bus_info(%d, %d, &) -> %d\n",
+		    maj, min, ret);
 		failures++;
 	} else {
 		printf("PCI bus info: dom=%d bus=%d dev=%d func=%d\n",
-		       pci_bus.domain,
-		       pci_bus.bus,
-		       pci_bus.dev,
-		       pci_bus.func);
+		    pci_bus.domain,
+		    pci_bus.bus,
+		    pci_bus.dev,
+		    pci_bus.func);
 	}
 
-	ret = _sun_drmParsePciDeviceInfo(path, &pci_dev);
+	ret = _sun_drm_get_pci_dev_info(path, &pci_dev);
 	if (ret) {
-		printf("FAIL: _sun_drmParsePciDeviceInfo(\"%s\", &) -> %d\n",
-		       path, ret);
+		printf("FAIL: _sun_drm_get_pci_dev_info(\"%s\", &) -> %d\n",
+		    path, ret);
 		failures++;
 	} else {
 		printf("PCI device info: ven=%x dev=%x "
-		       "subven=%x subdev=%x rev=%x\n",
-		       pci_dev.vendor_id,
-		       pci_dev.device_id,
-		       pci_dev.subvendor_id,
-		       pci_dev.subdevice_id,
-		       pci_dev.revision_id);
+		    "subven=%x subdev=%x rev=%x\n",
+		    pci_dev.vendor_id,
+		    pci_dev.device_id,
+		    pci_dev.subvendor_id,
+		    pci_dev.subdevice_id,
+		    pci_dev.revision_id);
 	}
 
 	fd = open(path, O_RDWR);
@@ -110,7 +104,7 @@ int main(int argc, char **argv)
 		return (1);
 	}
 
-	path2 = _sun_drmGetMinorNameForFD(fd, 0);
+	path2 = drmGetPrimaryDeviceNameFromFd(fd);
 	if (path2 == NULL) {
 		ret = errno;
 		printf("FAIL: open(%s) -> %d\n", path, ret);

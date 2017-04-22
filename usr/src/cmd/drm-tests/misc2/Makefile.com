@@ -14,17 +14,7 @@
 #
 
 PROG= \
-	openclose	\
-	getversion	\
-	getclient	\
-	getstats	\
-	setversion	\
-	updatedraw	\
-	name_from_fd	\
 	getsundev
-
-# All programs here require this devinfo object.
-DEVOBJ=drmtest_sun.o
 
 include	../../Makefile.drm
 
@@ -45,17 +35,17 @@ all:	 $(PROG)
 lint:
 
 clean:     
-	$(RM) $(PROG:%=%.o) $(DEVOBJ)
+	$(RM) $(PROG:%=%.o)
 
-% : $(SRCDIR)/%.c $(DEVOBJ)
+% : $(SRCDIR)/%.c
 	$(COMPILE.c) -o $@.o $<
-	$(LINK.c) -o $@ $@.o $(DEVOBJ) $(LDLIBS)
+	$(LINK.c) -o $@ $@.o $(LDLIBS)
 
 %.o : ../common/%.c
 	$(COMPILE.c) -o $@ -c $<
 
 getsundev : getsundev.o
-	$(LINK.c) -o $@ $@.o $(DEVOBJ) $(LDLIBS)
+	$(LINK.c) -o $@ $@.o $(LDLIBS)
 
 .KEEP_STATE:
 

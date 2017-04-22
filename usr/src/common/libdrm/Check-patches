@@ -52,8 +52,8 @@
 # One big patch might be easier than all this...
 # but for now the patches are split up as shown below.
 
-ref=libdrm-2.4.74-ref
-dir=libdrm-2.4.74
+ref=libdrm-2.4.75-ref
+dir=libdrm-2.4.75
 
 # You make this directory by hand.  Not doing this automatically
 # because I want to make srue you to know it's being written into.

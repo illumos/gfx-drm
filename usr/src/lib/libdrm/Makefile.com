@@ -31,7 +31,7 @@ VERS=		.2
 # See common/libdrm/libdrm-*/Makefile.in am__objects
 OBJECTS=	xf86drm.o xf86drmHash.o \
 	xf86drmRandom.o xf86drmSL.o xf86drmMode.o \
-	sun_xf86drm.o sun_devinfo.o
+	sun_devinfo.o
 
 include ../../Makefile.lib
 include $(SRC)/common/libdrm/Makefile.drm

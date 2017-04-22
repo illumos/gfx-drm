@@ -31,14 +31,7 @@
 
 # Leaving out random (takes a while)
 # Also updatedraw (broken at the moment)
-TESTS="dristat drmdevice drmstat
-	drmsl hash
-	openclose
-	getversion
-	getclient
-	getstats
-	setversion
-	name_from_fd"
+TESTS="drmdevice dristat drmstat drmsl hash"
 
 run_all() {
 for f in $TESTS ; do

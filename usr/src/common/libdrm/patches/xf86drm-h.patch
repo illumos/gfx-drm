@@ -25,9 +25,9 @@
 # or other dealings in this Software without prior written authorization
 # of the copyright holder.
 
-diff ... libdrm-2.4.74/xf86drm.h
---- libdrm-2.4.74-ref/xf86drm.h	Tue Nov 29 06:15:10 2016
-+++ libdrm-2.4.74/xf86drm.h	Sat Dec 31 19:13:17 2016
+diff ... libdrm-2.4.75/xf86drm.h
+--- libdrm-2.4.75-ref/xf86drm.h	Fri Jan 27 20:15:16 2017
++++ libdrm-2.4.75/xf86drm.h	Sat Apr 22 12:58:07 2017
 @@ -472,6 +472,17 @@
  #endif /* architecture */
  #endif /* __GNUC__ >= 2 */
@@ -46,19 +46,16 @@ diff ... libdrm-2.4.74/xf86drm.h
  #ifndef DRM_CAS
  #define DRM_CAS(lock,old,new,ret) do { ret=1; } while (0) /* FAST LOCK FAILS */
  #endif
-@@ -801,6 +812,17 @@
- extern int drmGetDevices(drmDevicePtr devices[], int max_devices);
- extern void drmFreeDevices(drmDevicePtr devices[], int count);
+@@ -844,6 +855,14 @@
+ extern int drmGetDevice2(int fd, uint32_t flags, drmDevicePtr *device);
+ extern int drmGetDevices2(uint32_t flags, drmDevicePtr devices[], int max_devices);
  
 +#ifdef __sun
 +extern int _sun_drm_get_major(void);
-+extern char * _sun_drmGetMinorNameForFD(int fd, int type);
-+extern int _sun_drmParseSubsystemType(int maj, int min);
-+extern int _sun_drmParsePciBusInfo(int maj, int min, drmPciBusInfoPtr info);
-+extern int _sun_drmParsePciDeviceInfo(const char *d_name,
-+				 drmPciDeviceInfoPtr device);
 +extern int _sun_drm_find_device(int min, char **pathp);
-+extern int _sun_drm_get_pci_info(char *path, drmPciDeviceInfo *pcii);
++extern int _sun_drm_get_subsystem(char *path);
++extern int _sun_drm_get_pci_bus_info(char *path, drmPciBusInfo *bus);
++extern int _sun_drm_get_pci_dev_info(char *path, drmPciDeviceInfo *dev);
 +#endif /* __sun */
 +
  #if defined(__cplusplus)

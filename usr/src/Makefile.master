@@ -367,8 +367,9 @@ XESS=			-xs
 XSTRCONST=		-xstrconst
 
 #
-# turn warnings into errors (C)
-CERRWARN = -errtags=yes -errwarn=%all
+# illumos gate would turn warnings into errors (C) here.
+# In this gate, we do that only in usr/src/uts
+CERRWARN = -errtags=yes # -errwarn=%all
 CERRWARN += -erroff=E_EMPTY_TRANSLATION_UNIT
 CERRWARN += -erroff=E_STATEMENT_NOT_REACHED
 

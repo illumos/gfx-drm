@@ -14,12 +14,10 @@
 #
 
 PROG= \
-	dristat		\
-	drmdevice	\
-	drmstat		\
 	drmsl		\
 	hash		\
-	random
+	random		\
+	drmdevice
 
 include	../../Makefile.drm
 

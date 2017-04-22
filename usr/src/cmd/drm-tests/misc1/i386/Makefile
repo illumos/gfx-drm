@@ -1,3 +1,3 @@
 include ../Makefile.com
 
-install: all $(ROOTCMD)
+install: $(ROOTCMD)
