@@ -19,7 +19,7 @@
 
 include $(SRC)/Makefile.master
 
-FETCH=	$(SRC)/tools/userland-fetch
+FETCH=	$(PYTHON) $(SRC)/tools/userland-fetch
 
 # See also: ./Makefile.drm LIBDRM_VERS and ./Check-patches
 # PLEASE RUN Check-patches after updating!
