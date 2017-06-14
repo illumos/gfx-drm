@@ -25,22 +25,22 @@ ONBLD_TOOLS=/opt/onbld
 # (a) we know the debug code builds, and (b) install non-debug.
 install: FRC
 	$(ONBLD_TOOLS)/bin/bldenv myenv.sh \
-	"cd usr/src ; make setup"
+	"cd usr/src ; $(MAKE) setup"
 	$(ONBLD_TOOLS)/bin/bldenv -d myenv.sh \
-	"cd usr/src/uts ; make install"
+	"cd usr/src/uts ; $(MAKE) install"
 	$(ONBLD_TOOLS)/bin/bldenv myenv.sh \
-	"cd usr/src ; make install"
+	"cd usr/src ; $(MAKE) install"
 
 debug: FRC
 	$(ONBLD_TOOLS)/bin/bldenv -d myenv.sh \
-	"cd usr/src ; make install"
+	"cd usr/src ; $(MAKE) install"
 
 clean: FRC
 	$(ONBLD_TOOLS)/bin/bldenv myenv.sh \
-	"cd usr/src ; make clobber"
+	"cd usr/src ; $(MAKE) clobber"
 
 package: FRC
 	$(ONBLD_TOOLS)/bin/bldenv myenv.sh \
-	"cd usr/src/pkg ; make install"
+	"cd usr/src/pkg ; $(MAKE) install"
 
 FRC:
