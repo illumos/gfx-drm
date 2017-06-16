@@ -20,7 +20,7 @@ ROOTHASMAN=	$(ROOT)/usr/has/man
 FILEMODE=	0444
 
 # or: http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl
-MANPAGES_STYLESHEET = /usr/share/sgml/docbook/xsl-stylesheets/manpages/docbook.xsl
+MANPAGES_STYLESHEET = $(DOCBOOK_XSL_ROOT)/manpages/docbook.xsl
 
 XSLTPROC_FLAGS = \
 	--stringparam man.authors.section.enabled 0 \
