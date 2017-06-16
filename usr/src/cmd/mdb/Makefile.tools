@@ -28,7 +28,7 @@ TOOLSDIR = $(SRC)/cmd/mdb/tools
 
 # Set the dynamic.flags1 field to: [ NOKSYMS EDITED ]
 # You can inspect it with: elfedit -e "dyn:flags1" file
-SETDYNFLAG	= elfedit -e "dyn:flags1 0x280000"
+SETDYNFLAG	= $(ELFEDIT) -e "dyn:flags1 0x280000"
 
 # FINDFP is only used on sparc anyway.
 # It's probably better to use compiler options to avoid FP instructions,
