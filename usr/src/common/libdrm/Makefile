@@ -58,15 +58,15 @@ check: FRC
 	patch -b -N -p 1 -i $$p ; done )
 	touch $@
 
-.unpacked: $(LIBDRM_ARCHIVE)
-	tar xvfjo $(LIBDRM_ARCHIVE)
+.unpacked: $(USERLAND_ARCHIVES)$(LIBDRM_ARCHIVE)
+	tar xvfjo $(USERLAND_ARCHIVES)$(LIBDRM_ARCHIVE)
 	touch $@
 
-$(LIBDRM_ARCHIVE) :
-	$(FETCH) -u $(LIBDRM_URL) -h $(LIBDRM_HASH)
+$(USERLAND_ARCHIVES)$(LIBDRM_ARCHIVE) :
+	$(FETCH) --file $@ -u $(LIBDRM_URL) -h $(LIBDRM_HASH)
 
 clobber: clean
-	$(RM) $(LIBDRM_ARCHIVE)
+	$(RM) $(USERLAND_ARCHIVES)$(LIBDRM_ARCHIVE)
 
 clean: FRC
 	$(RM) -rf $(LIBDRM_DIR)
