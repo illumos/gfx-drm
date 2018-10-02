@@ -170,15 +170,10 @@ driver name=i915 perms="* 0644 root sys" \
     alias=pci8086,f33
 file path=kernel/drv/$(ARCH64)/i915 group=sys mode=0755
 #file path=kernel/drv/$(ARCH64)/radeon group=sys mode=0755
-file path=kernel/drv/i915 group=sys mode=0755
-#file path=kernel/drv/radeon group=sys mode=0755
 file path=kernel/kmdb/$(ARCH64)/i915 group=sys mode=0555
-file path=kernel/kmdb/i915 group=sys mode=0555
 file path=kernel/misc/$(ARCH64)/drm group=sys mode=0755
-file path=kernel/misc/drm group=sys mode=0755
 file path=usr/lib/devfsadm/linkmod/SUNW_drm_link_i386.so group=sys mode=0755
 file path=usr/lib/mdb/kvm/$(ARCH64)/i915.so group=sys mode=0555
-file path=usr/lib/mdb/kvm/i915.so group=sys mode=0555
 file path=usr/share/man/man7d/i915.7d
 #file path=usr/share/man/man7d/radeon.7d
 legacy pkg=SUNWdrmr desc="Direct Rendering Manager kernel drivers and modules" \
