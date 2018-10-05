@@ -188,42 +188,10 @@ FRC:
 #
 
 cc-version:
-	@if $($(MACH)_CC) -_versions >/dev/null 2>/dev/null; then \
-		$(ECHO) 32-bit compiler;			\
-		$(ECHO) $($(MACH)_CC);				\
-		$($(MACH)_CC) -_versions 2>&1 |			\
-		    $(EGREP) '^(cw|cc|gcc|primary|shadow)';	\
-	else							\
-		__COMPILER=`$($(MACH)_CC) -_compiler 2>/dev/null || $(TRUE)`;\
-		if [ -z "$$__COMPILER" ]; then			\
-			$(ECHO) No 32-bit compiler found;	\
-			exit 1;					\
-		else						\
-			$(ECHO) 32-bit compiler;		\
-			$(ECHO) $($(MACH)_CC);			\
-			$(ECHO) $$__COMPILER;			\
-			$($(MACH)_CC) -V 2>&1 | head -1;	\
-		fi;						\
-	fi
+	@$(CW) --versions $(CW_CC_COMPILERS) 2>&1
 
+# for older nightlies
 cc64-version:
-	@if $($(MACH64)_CC) -_versions >/dev/null 2>/dev/null; then \
-		$(ECHO) 64-bit compiler;			\
-		$(ECHO) $($(MACH64)_CC);			\
-		$($(MACH64)_CC) -_versions 2>&1 |		\
-		    $(EGREP) '^(cw|cc|gcc|primary|shadow)';	\
-	else							\
-		__COMPILER=`$($(MACH64)_CC) -_compiler 2>/dev/null || $(TRUE)`;\
-		if [ -z "$$__COMPILER" ]; then			\
-			$(ECHO) No 64-bit compiler found;	\
-			exit 1;					\
-		else						\
-			$(ECHO) 64-bit compiler;		\
-			$(ECHO) $($(MACH64)_CC);		\
-			$(ECHO) $$__COMPILER;			\
-			$($(MACH64)_CC) -V 2>&1 | head -1;	\
-		fi;						\
-	fi
 
 java-version:
 	@if [ -x "$(JAVAC)" ]; then			\
