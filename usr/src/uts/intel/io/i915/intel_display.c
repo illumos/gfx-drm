@@ -7163,7 +7163,7 @@ void intel_mark_fb_busy(struct drm_i915_gem_object *obj,
 		if (to_intel_framebuffer(crtc->fb)->obj != obj)
 			continue;
 
-			intel_increase_pllclock(crtc);
+		intel_increase_pllclock(crtc);
 		if (ring && intel_fbc_enabled(dev))
 			ring->fbc_dirty = true;
 	}

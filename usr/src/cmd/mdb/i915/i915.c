@@ -777,7 +777,7 @@ i915_error_reg_dump(uintptr_t addr, uint_t flags, int argc,
 	if (ret == DCMD_OK)
 		mdb_printf("ERROR_GEN6: 0x%lx\n", val);
 
-		mdb_printf("\nBlitter command stream:\n");
+	mdb_printf("\nBlitter command stream:\n");
 	ret = i915_read(dev_priv, (uintptr_t)0x22064, &val);
 	if (ret == DCMD_OK)
 		mdb_printf("  BLT EIR: 0x%08x\n", val);
