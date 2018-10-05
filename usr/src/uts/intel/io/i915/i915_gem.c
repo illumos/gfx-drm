@@ -259,7 +259,7 @@ slow_shmem_bit17_copy(caddr_t gpu_page,
 		      int is_read)
 {
 
-	int ret;
+	int ret = 0;
 	/* Use the unswizzled path if this page isn't affected. */
 	if ((page_to_phys(gpu_page) & (1 << 17)) == 0) {
 		if (is_read)
@@ -369,12 +369,12 @@ i915_gem_shmem_pread(struct drm_device *dev,
 			if ((data_page_offset + page_length) > DRM_PAGE_SIZE)
 				page_length = PAGE_SIZE - data_page_offset;
 
-				slow_shmem_bit17_copy(obj->page_list[shmem_page_index],
-						shmem_page_offset,
-						user_data + data_page_index * DRM_PAGE_SIZE,
-						data_page_offset,
-						page_length,
-						1);
+			slow_shmem_bit17_copy(obj->page_list[shmem_page_index],
+				shmem_page_offset,
+				user_data + data_page_index * DRM_PAGE_SIZE,
+				data_page_offset,
+				page_length,
+				1);
 
 			remain -= page_length;
 			data_ptr += page_length;
@@ -553,12 +553,12 @@ i915_gem_shmem_pwrite(struct drm_device *dev,
 			if ((data_page_offset + page_length) > DRM_PAGE_SIZE)
 				page_length = PAGE_SIZE - data_page_offset;
 
-				slow_shmem_bit17_copy(obj->page_list[shmem_page_index],
-						shmem_page_offset,
-						user_data + data_page_index * DRM_PAGE_SIZE,
-						data_page_offset,
-						page_length,
-						0);
+			slow_shmem_bit17_copy(obj->page_list[shmem_page_index],
+				shmem_page_offset,
+				user_data + data_page_index * DRM_PAGE_SIZE,
+				data_page_offset,
+				page_length,
+				0);
 
 			remain -= page_length;
 			data_ptr += page_length;

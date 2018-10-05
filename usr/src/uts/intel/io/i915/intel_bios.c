@@ -305,9 +305,9 @@ parse_sdvo_panel_data(struct drm_i915_private *dev_priv,
 	if (index == -1) {
 		struct bdb_sdvo_lvds_options *sdvo_lvds_options;
 
-	sdvo_lvds_options = find_section(bdb, BDB_SDVO_LVDS_OPTIONS);
-	if (!sdvo_lvds_options)
-		return;
+		sdvo_lvds_options = find_section(bdb, BDB_SDVO_LVDS_OPTIONS);
+		if (!sdvo_lvds_options)
+			return;
 
 		index = sdvo_lvds_options->panel_type;
 	}

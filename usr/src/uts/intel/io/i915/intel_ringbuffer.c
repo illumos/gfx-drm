@@ -121,8 +121,8 @@ gen4_render_ring_flush(struct intel_ring_buffer *ring,
 		cmd = MI_FLUSH | MI_NO_WRITE_FLUSH;
 	if ((invalidate_domains|flush_domains) & I915_GEM_DOMAIN_RENDER)
 		cmd &= ~MI_NO_WRITE_FLUSH;
-		if (invalidate_domains & I915_GEM_DOMAIN_INSTRUCTION)
-			cmd |= MI_EXE_FLUSH;
+	if (invalidate_domains & I915_GEM_DOMAIN_INSTRUCTION)
+		cmd |= MI_EXE_FLUSH;
 
 	if (invalidate_domains & I915_GEM_DOMAIN_COMMAND &&
 	    (IS_GEN4(dev) || IS_GEN5(dev)))
