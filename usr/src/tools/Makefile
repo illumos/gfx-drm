@@ -1,33 +1,78 @@
 #
-# This file and its contents are supplied under the terms of the
-# Common Development and Distribution License ("CDDL"), version 1.0.
-# You may only use this file in accordance with the terms of version
-# 1.0 of the CDDL.
+# CDDL HEADER START
 #
-# A full copy of the text of the CDDL should have accompanied this
-# source.  A copy of the CDDL is also available via the Internet at
-# http://www.illumos.org/license/CDDL.
+# The contents of this file are subject to the terms of the
+# Common Development and Distribution License (the "License").
+# You may not use this file except in compliance with the License.
+#
+# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+# or http://www.opensolaris.org/os/licensing.
+# See the License for the specific language governing permissions
+# and limitations under the License.
+#
+# When distributing Covered Code, include this CDDL HEADER in each
+# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+# If applicable, add the following below this CDDL HEADER, with the
+# fields enclosed by brackets "[]" replaced with your own identifying
+# information: Portions Copyright [yyyy] [name of copyright owner]
+#
+# CDDL HEADER END
 #
 
 #
-# Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
-#
-
-#
-# Don't want to copy the tools into this skeleton,
-# so just make a link to /opt/onbld
+# Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright 2014 Garrett D'Amore <garrett@damore.org>
+# Copyright 2016 Toomas Soome <tsoome@me.com>
+# Copyright (c) 2016, Chris Fraire <cfraire@me.com>.
+# Copyright 2018 OmniOS Community Edition (OmniOSce) Association.
 #
 
 include ../Makefile.master
 
-all install:  proto/root_$(MACH)-nd/opt
+SUBDIRS= cw
 
-proto/root_$(MACH)-nd/opt :
-	-/usr/bin/mkdir -p proto/root_$(MACH)-nd
-	/usr/bin/rm -f $@
-	/usr/bin/ln -s /opt $@
+include Makefile.tools
 
-clobber:
-	/usr/bin/rm -rf proto
+ROOTDIRS= \
+	$(ROOTOPT) \
+	$(ROOTONBLD) \
+	$(ROOTONBLD)/bin \
+	$(ROOTONBLD)/bin/$(MACH) \
+	$(ROOTONBLD)/man \
+	$(ROOTONBLD)/man/man1onbld
 
-clean:
+all :=		TARGET= install
+install :=	TARGET= install
+clean :=	TARGET= clean
+clobber :=	TARGET= clobber
+
+.KEEP_STATE:
+
+#
+# Only create directories in the tools proto area when doing an actual
+# build, not a clean or clobber.
+#
+DOROOTDIRS= $(ROOTDIRS)
+clobber:= DOROOTDIRS=
+clean:= DOROOTDIRS=
+
+DOROOTONBLDLIBPY= $(ROOTONBLDLIBPY)
+clobber:= DOROOTONBLDLIBPY=
+clean:= DOROOTONBLDLIBPY=
+
+all install: $(SUBDIRS)
+
+clean: $(SUBDIRS)
+
+clobber: $(SUBDIRS)
+	$(RM) -rf $(TOOLS_PROTO)
+
+.PARALLEL: $(SUBDIRS)
+
+$(SUBDIRS): $$(DOROOTDIRS) FRC
+	@cd $@; pwd; $(MAKE) $(TARGET)
+
+$(ROOTDIRS):
+	$(MKDIR) -p -m $(DIRMODE) $@
+
+FRC:

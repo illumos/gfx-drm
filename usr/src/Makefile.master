@@ -107,6 +107,8 @@ CLOSED=		$(SRC)/../closed
 
 BUILD_TOOLS=		/ws/onnv-tools
 ONBLD_TOOLS=		$(BUILD_TOOLS)/onbld
+TOOLS=			$(SRC)/tools
+TOOLS_PROTO=		$(TOOLS)/proto/root_$(MACH)-nd
 
 JAVA_ROOT=	/usr/java
 
@@ -147,6 +149,7 @@ LEX=		/usr/ccs/bin/lex
 FLEX=		/usr/bin/flex
 YACC=		/usr/ccs/bin/yacc
 CPP=		/usr/lib/cpp
+MKDIR=		/usr/bin/mkdir
 JAVAC=		$(JAVA_ROOT)/bin/javac
 JAVAH=		$(JAVA_ROOT)/bin/javah
 JAVADOC=	$(JAVA_ROOT)/bin/javadoc
@@ -775,7 +778,7 @@ CW_CCC_COMPILERS=	$(PRIMARY_CCC:%=--primary %) $(SHADOW_CCCS:%=--shadow %)
 # Specify platform compiler versions for languages
 # that we use (currently only c and c++).
 #
-CW=			$(ONBLD_TOOLS)/bin/$(MACH)/cw
+CW=			$(TOOLS_PROTO)$(ONBLD_TOOLS)/bin/$(MACH)/cw
 BUILD_CC=		$(CW) $(CW_CC_COMPILERS) --
 BUILD_CCC=		$(CW) -C $(CW_CCC_COMPILERS) --
 BUILD_CPP=		/usr/ccs/lib/cpp
