@@ -80,7 +80,7 @@ to check that your patches are in sync with edits.
 When doing incremental work in the gate, i.e. fixing
 compilation errors, it's handy to run an editor in a
 "bldenv" environment, as follows:
-	bldenv -d myenv.sh
+	ksh93 tools/bldenv -d myenv.sh
 
 That gets you a new shell, in which you can run an
 emacs if you like "meta-x compile", or whatever.

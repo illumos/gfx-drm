@@ -92,14 +92,12 @@ PKGDEBUG= @
 PKGMACH=	$(MACH)
 
 #
-# ROOT, TOOLS_PROTO, and PKGARCHIVE should be set by nightly or
+# ROOT and PKGARCHIVE should be set by nightly or
 # bldenv.  These macros translate them into terms of $PKGMACH, instead
 # of $ARCH.
 #
 PKGROOT.cmd=	print $(ROOT) | sed -e s:/root_$(MACH):/root_$(PKGMACH):
 PKGROOT=	$(PKGROOT.cmd:sh)
-TOOLSROOT.cmd=	print $(TOOLS_PROTO) | sed -e s:/root_$(MACH):/root_$(PKGMACH):
-TOOLSROOT=	$(TOOLSROOT.cmd:sh)
 PKGDEST.cmd=	print $(PKGARCHIVE) | sed -e s:/$(MACH)/:/$(PKGMACH)/:
 PKGDEST=	$(PKGDEST.cmd:sh)
 
@@ -126,7 +124,6 @@ PDIR= packages.$(PKGMACH)
 # Publication from the tools proto area is managed in the
 # publication rule.
 #
-$(PDIR)/developer-build-onbld.dep:= PKGROOT= $(TOOLSROOT)
 
 # In the real ON gate, was "on-nightly"
 PKGPUBLISHER= gfx-drm
@@ -539,7 +536,7 @@ $(PDIR)/%.pub: $(PDIR)/%.res
 	if [ -s $(<) ]; then \
 		print "Publishing $(@F:%.pub=%) to $$r repository"; \
 		pkgsend -s file://$(PKGDEST)/repo.$$r publish \
-		    -d $(PKGROOT) -d $(TOOLSROOT) \
+		    -d $(PKGROOT) \
 		    -d license_files -d $(PKGROOT)/licenses \
 		    --fmri-in-manifest --no-index --no-catalog $(<) \
 		    > /dev/null; \
@@ -674,7 +671,7 @@ stage-licenses: license-list FRC
 protocmp: makesilent
 	@validate_pkg -a $(PKGMACH) -v \
 		$(EXCEPTIONS:%=-e except_%) \
-		-m $(PDIR) -p $(PKGROOT) -p $(TOOLSROOT)
+		-m $(PDIR) -p $(PKGROOT)
 
 pmodes: makesilent
 	@validate_pkg -a $(PKGMACH) -M -m $(PDIR) \

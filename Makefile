@@ -24,23 +24,23 @@ ONBLD_TOOLS=/opt/onbld
 # Do both debug and non-debug build in uts, in that order, so
 # (a) we know the debug code builds, and (b) install non-debug.
 install: FRC
-	$(ONBLD_TOOLS)/bin/bldenv myenv.sh \
+	/usr/bin/ksh93 tools/bldenv myenv.sh \
 	"cd usr/src ; $(MAKE) setup"
-	$(ONBLD_TOOLS)/bin/bldenv -d myenv.sh \
+	/usr/bin/ksh93 tools/bldenv -d myenv.sh \
 	"cd usr/src/uts ; $(MAKE) install"
-	$(ONBLD_TOOLS)/bin/bldenv myenv.sh \
+	/usr/bin/ksh93 tools/bldenv myenv.sh \
 	"cd usr/src ; $(MAKE) install"
 
 debug: FRC
-	$(ONBLD_TOOLS)/bin/bldenv -d myenv.sh \
+	/usr/bin/ksh93 tools/bldenv -d myenv.sh \
 	"cd usr/src ; $(MAKE) install"
 
 clean: FRC
-	$(ONBLD_TOOLS)/bin/bldenv myenv.sh \
+	/usr/bin/ksh93 tools/bldenv myenv.sh \
 	"cd usr/src ; $(MAKE) clobber"
 
 package: FRC
-	$(ONBLD_TOOLS)/bin/bldenv myenv.sh \
+	/usr/bin/ksh93 tools/bldenv myenv.sh \
 	"cd usr/src/pkg ; $(MAKE) install"
 
 FRC:

@@ -24,8 +24,6 @@
 # Use is subject to license terms.
 #
 
-TOOLSDIR = $(SRC)/cmd/mdb/tools
-
 # Set the dynamic.flags1 field to: [ NOKSYMS EDITED ]
 # You can inspect it with: elfedit -e "dyn:flags1" file
 SETDYNFLAG	= $(ELFEDIT) -e "dyn:flags1 0x280000"
