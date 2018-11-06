@@ -40,6 +40,7 @@ install :=	TARGET= install
 lint :=		TARGET= lint
 
 HDRS= \
+	libsync.h \
 	xf86drm.h \
 	xf86drmMode.h
 
