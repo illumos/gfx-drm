@@ -73,6 +73,7 @@ file path=usr/include/exynos/exynos_fimg2d.h
 file path=usr/include/freedreno/freedreno_drmif.h
 file path=usr/include/freedreno/freedreno_ringbuffer.h
 file path=usr/include/libkms/libkms.h
+file path=usr/include/libsync.h
 file path=usr/include/omap/omap_drm.h
 file path=usr/include/xf86drm.h
 file path=usr/include/xf86drmMode.h
