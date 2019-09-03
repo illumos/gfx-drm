@@ -75,7 +75,7 @@ drm_init_kstats(struct drm_device *sc)
 	    KSTAT_TYPE_NAMED, sizeof (drmkstat_name)/sizeof (char *) - 1,
 	    KSTAT_FLAG_PERSISTENT);
 	if (ksp == NULL)
-		return (NULL);
+		return (0);
 
 	ksp->ks_private = sc;
 	ksp->ks_update = drm_kstat_update;

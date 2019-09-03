@@ -64,7 +64,7 @@ int drm_sysfs_device_add(struct drm_minor *minor)
 
 	switch (minor->type) {
 	case DRM_MINOR_AGPMASTER:
-		ret = agpmaster_attach(dev->devinfo, 
+		ret = agpmaster_attach(dev->devinfo,
 		    (agp_master_softc_t **)&minor->private,
 		    dev->pdev->pci_cfg_acc_handle, minor->index);
 		if (ret != DDI_SUCCESS) {
@@ -84,7 +84,7 @@ int drm_sysfs_device_add(struct drm_minor *minor)
 		minor->private = gfxp;
 
 		ret = ddi_create_minor_node(dev->devinfo,
-		    minor->name, S_IFCHR, minor->index, DDI_NT_DISPLAY, NULL);
+		    minor->name, S_IFCHR, minor->index, DDI_NT_DISPLAY, 0);
 		if (ret != DDI_SUCCESS) {
 			DRM_ERROR("ddi_create_minor_node failed");
 			return (EFAULT);
@@ -95,7 +95,7 @@ int drm_sysfs_device_add(struct drm_minor *minor)
 	case DRM_MINOR_CONTROL:
 	case DRM_MINOR_RENDER:
 		ret = ddi_create_minor_node(dev->devinfo,
-		    minor->name, S_IFCHR, minor->index, DDI_NT_DISPLAY_DRM, NULL);
+		    minor->name, S_IFCHR, minor->index, DDI_NT_DISPLAY_DRM, 0);
 		if (ret != DDI_SUCCESS) {
 			DRM_ERROR("ddi_create_minor_node failed");
 			return (EFAULT);
