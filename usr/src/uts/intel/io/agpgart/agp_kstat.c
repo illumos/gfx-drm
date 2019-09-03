@@ -102,7 +102,7 @@ agp_init_kstats(agpgart_softstate_t *sc)
 	    KSTAT_TYPE_NAMED, sizeof (agpkstat_name)/sizeof (char *) - 1,
 	    KSTAT_FLAG_PERSISTENT);
 	if (ksp == NULL)
-		return (NULL);
+		return (0);
 
 	ksp->ks_private = sc;
 	ksp->ks_update = agp_kstat_update;
