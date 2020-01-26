@@ -887,6 +887,7 @@ bool intel_ddi_connector_get_hw_state(struct intel_connector *intel_connector)
 	case TRANS_DDI_MODE_SELECT_DP_SST:
 		if (type == DRM_MODE_CONNECTOR_eDP)
 			return true;
+	/* FALLTHROUGH */
 	case TRANS_DDI_MODE_SELECT_DP_MST:
 		return (type == DRM_MODE_CONNECTOR_DisplayPort);
 

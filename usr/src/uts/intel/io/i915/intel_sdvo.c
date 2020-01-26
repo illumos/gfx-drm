@@ -1216,6 +1216,7 @@ static void intel_sdvo_mode_set(struct intel_encoder *intel_encoder)
 	switch (intel_crtc->config.pixel_multiplier) {
 	default:
 		DRM_ERROR("unknown pixel mutlipler specified\n");
+	/* FALLTHROUGH */
 	case 1: rate = SDVO_CLOCK_RATE_MULT_1X; break;
 	case 2: rate = SDVO_CLOCK_RATE_MULT_2X; break;
 	case 4: rate = SDVO_CLOCK_RATE_MULT_4X; break;
@@ -2209,14 +2210,19 @@ intel_sdvo_guess_ddc_bus(struct intel_sdvo *sdvo)
 	switch (sdvo->controlled_output) {
 	case SDVO_OUTPUT_LVDS1:
 		mask |= SDVO_OUTPUT_LVDS1;
+	/* FALLTHROUGH */
 	case SDVO_OUTPUT_LVDS0:
 		mask |= SDVO_OUTPUT_LVDS0;
+	/* FALLTHROUGH */
 	case SDVO_OUTPUT_TMDS1:
 		mask |= SDVO_OUTPUT_TMDS1;
+	/* FALLTHROUGH */
 	case SDVO_OUTPUT_TMDS0:
 		mask |= SDVO_OUTPUT_TMDS0;
+	/* FALLTHROUGH */
 	case SDVO_OUTPUT_RGB1:
 		mask |= SDVO_OUTPUT_RGB1;
+	/* FALLTHROUGH */
 	case SDVO_OUTPUT_RGB0:
 		mask |= SDVO_OUTPUT_RGB0;
 		break;

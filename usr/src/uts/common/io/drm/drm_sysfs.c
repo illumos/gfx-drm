@@ -131,7 +131,7 @@ void drm_sysfs_device_remove(struct drm_minor *minor)
 			gfxp_vgatext_softc_free(minor->private);
 			minor->private = NULL;
 		}
-
+	/* FALLTHROUGH */
 	/* LINTED */
 	case DRM_MINOR_LEGACY:
 	case DRM_MINOR_CONTROL:
