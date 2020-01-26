@@ -112,7 +112,7 @@ TOOLS_PROTO=		$(TOOLS)/proto/root_$(MACH)-nd
 
 JAVA_ROOT=	/usr/java
 
-GNUC_ROOT=	/opt/gcc/4.4.4
+GNUC_ROOT=	/usr/gcc/7
 GCCLIBDIR=	$(GNUC_ROOT)/lib
 GCCLIBDIR64=	$(GNUC_ROOT)/lib/$(MACH64)
 
@@ -761,9 +761,9 @@ SPRO_VROOT=		$(SPRO_ROOT)/SS12
 GNU_ROOT=		/usr
 
 
-$(__GNUC)PRIMARY_CC=	gcc4,$(GNUC_ROOT)/bin/gcc,gnu
+$(__GNUC)PRIMARY_CC=	gcc7,$(GNUC_ROOT)/bin/gcc,gnu
 $(__SUNC)PRIMARY_CC=	studio12,$(SPRO_VROOT)/bin/cc,sun
-$(__GNUC)PRIMARY_CCC=	gcc4,$(GNUC_ROOT)/bin/g++,gnu
+$(__GNUC)PRIMARY_CCC=	gcc7,$(GNUC_ROOT)/bin/g++,gnu
 $(__SUNC)PRIMARY_CCC=	studio12,$(SPRO_VROOT)/bin/CC,sun
 CW_CC_COMPILERS=	$(PRIMARY_CC:%=--primary %) $(SHADOW_CCS:%=--shadow %)
 CW_CCC_COMPILERS=	$(PRIMARY_CCC:%=--primary %) $(SHADOW_CCCS:%=--shadow %)

@@ -6006,6 +6006,7 @@ static bool haswell_get_pipe_config(struct intel_crtc *crtc,
 		switch (tmp & TRANS_DDI_EDP_INPUT_MASK) {
 		default:
 			DRM_ERROR("unknown pipe linked to edp transcoder\n");
+		/* FALLTHROUGH */
 		case TRANS_DDI_EDP_INPUT_A_ONOFF:
 		case TRANS_DDI_EDP_INPUT_A_ON:
 			trans_edp_pipe = PIPE_A;
@@ -7746,6 +7747,7 @@ compute_baseline_pipe_bpp(struct intel_crtc *crtc,
 		/* checked in intel_framebuffer_init already */
 		if (INTEL_INFO(dev)->gen > 3)
 			return -EINVAL;
+	/* FALLTHROUGH */
 	case DRM_FORMAT_RGB565:
 		bpp = 6*3; /* min is 18bpp */
 		break;
@@ -7754,6 +7756,7 @@ compute_baseline_pipe_bpp(struct intel_crtc *crtc,
 		/* checked in intel_framebuffer_init already */
 		if (INTEL_INFO(dev)->gen < 4)
 			return -EINVAL;
+	/* FALLTHROUGH */
 	case DRM_FORMAT_XRGB8888:
 	case DRM_FORMAT_ARGB8888:
 		bpp = 8*3;

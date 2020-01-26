@@ -242,6 +242,7 @@ void i915_save_display_reg(struct drm_device *dev)
 		if (IS_I945G(dev) || IS_I945GM(dev) || IS_G33(dev))
 			for (i = 0; i < 8; i++)
 				dev_priv->regfile.saveFENCE[i+8] = I915_READ(FENCE_REG_945_8 + (i * 4));
+	/* FALLTHROUGH */
 	case 2:
 		for (i = 0; i < 8; i++)
 			dev_priv->regfile.saveFENCE[i] = I915_READ(FENCE_REG_830_0 + (i * 4));
