@@ -1,0 +1,40 @@
+
+Dec-30-2021 - Klaus Ziegler
+
+To upgrade libdrm:
+
+change LIBDRM_VERS in
+usr/src/common/libdrm/Makefile
+usr/src/common/libdrm/Makefile.drm
+LIBDRM_HASH in
+usr/src/common/libdrm/Makefile
+
+If the file extension of the file to be downloaded has changed, it must be
+changed in usr/src/pkg/manifests/x11-library-libdrm.mf and LIBDRM_ARCHIVE in
+usr/src/common/libdrm/Makefile must be modified accordingly.
+
+# NOTE: if you want to contribute changes to this graphics/DRM gate,
+# please use your own fork of gfx-drm.git and substitute HTTPS/URL below,
+# to match your repository.
+
+After you have setup a build environment as follows:
+git clone https://github.com/illumos/gfx-drm.git
+cd gfx-drm
+export BLDENV=tools/bldenv
+chmod 755 tools/bldenv
+
+edit myenv.sh to suite your needs, and start the first build:
+/usr/bin/env -i $BLDENV myenv.sh "cd usr/src; make install"
+
+most likely this first build will err'out right after unpacking
+the new library archive. At this stage the make target: check
+is run, which checks differences of gfx-drm headers and the
+new library supplied headers, these 5 headers will be checked:
+
+drm.h drm_fourcc.h drm_mode.h drm_sarea.h i915_drm.h
+
+To pass check target, generate patch files for these headers:
+cd usr/src/common/libdrm/libdrm-2.4.<new-version>/include/drm
+gdiff -u drm.h <WS>/usr/src/uts/common/drm/drm.h > /tmp/drm.h.patch
+and the others as well, then apply these patches to headers
+contained in usr/src/uts/common/drm and restart the build.

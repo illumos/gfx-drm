@@ -19,43 +19,56 @@
 # CDDL HEADER END
 #
 #
-# Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
+# Copyright 2006 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
 #
-# Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+# Copyright 2022 Klaus Ziegler
 #
 
-LIBRARY=	libdrm_amdgpu.a
-VERS=		.1
+# include library definitions
+include ../Makefile.lib
 
-# See common/libdrm/libdrm-*/amdgpu/Makefile.in am__objects
-OBJECTS= \
-	amdgpu_asic_id.o amdgpu_bo.o amdgpu_cs.o amdgpu_device.o \
-	amdgpu_gpu_info.o amdgpu_vamgr.o amdgpu_vm.o handle_table.o
-
-include ../../Makefile.lib
 include $(SRC)/common/libdrm/Makefile.drm
 
-LIBS =		$(DYNLIB)
-PCS =		$(LIBRARY:.a=.pc)
+SUBDIRS = $(MACH)
+$(BUILD64)SUBDIRS += $(MACH64)
 
-MAPFILES=
-SRCDIR =	$(LIBDRM_CMN_DIR)/amdgpu
-SRCS =		$(OBJECTS:%.o=$(SRCDIR)/%.c)
+all :=		TARGET= all
+clean :=	TARGET= clean
+clobber :=	TARGET= clobber
+install :=	TARGET= install
+lint :=		TARGET= lint
 
-CPPFLAGS +=	-I$(LIBDRM_CMN_DIR) -DAMDGPU_ASIC_ID_TABLE=\"/usr/share/libdrm/amdgpu.ids\"
-CPPFLAGS +=	-I$(LIBDRM_CMN_DIR)/amdgpu
+ROOTHDRDIR=	$(ROOT)/usr/include/drm
 
-LDLIBS32 +=	-L$(ROOT)/usr/lib/xorg
-LDLIBS64 +=	-L$(ROOT)/usr/lib/xorg/$(MACH64)
-
-LDLIBS += -lpciaccess -ldrm -lc
-
-all : $(LIBS) $(PCS)
-
-lint :
-
-include ../../libdrm/Makefile.pc
-include ../../Makefile.targ
+HDRS= 	nouveau.h
 
 .KEEP_STATE:
+
+install: all .WAIT $(SUBDIRS)
+
+all clean clobber lint: $(SUBDIRS)
+
+install_h: $(ROOTHDRS)
+
+# need to make ROOTHDRDIR
+$(ROOTHDRS) : $(ROOTHDRDIR)
+$(ROOTHDRDIR) :
+	$(INS.dir) $@
+
+check:	$(CHECKHDRS)
+
+_msg: # no msgfiles here
+
+$(POFILE):      pofile_MSGFILES
+
+# install rule for install_h target
+$(ROOTHDRDIR)/%: $(LIBDRM_CMN_DIR)/nouveau/%
+	$(INS.file)
+
+$(SUBDIRS): FRC
+	@cd $@; pwd; $(MAKE) $(TARGET)
+
+FRC:
+
+include ../Makefile.targ

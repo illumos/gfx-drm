@@ -204,7 +204,7 @@ enum subpixel_order {
  * Describes a given display (e.g. CRT or flat panel) and its limitations.
  */
 struct drm_display_info {
-	char name[DRM_DISPLAY_INFO_LEN];
+	char name[DRM_DISPLAY_MODE_LEN];
 
 	/* Physical size */
         unsigned int width_mm;

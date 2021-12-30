@@ -16,7 +16,6 @@
 PROG= \
 	drmsl		\
 	hash		\
-	random		\
 	drmdevice
 
 include	../../Makefile.drm

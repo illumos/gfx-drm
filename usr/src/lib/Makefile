@@ -53,10 +53,12 @@ i386_SUBDIRS= \
 	libdrm_intel \
 	libdrm_amdgpu \
 	libdrm_exynos \
+	libdrm_etnaviv \
 	libdrm_freedreno \
 	libdrm_omap \
 	libdrm_radeon \
-	libdrm_tegra
+	libdrm_tegra \
+	libdrm_nouveau
 
 sparc_SUBDIRS=
 

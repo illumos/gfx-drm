@@ -77,8 +77,6 @@ LINT64_FILES	 = $(LINT64_DIRS:%=%/llib-l$(MODULE).ln)
 #	interfaces.)
 #
 include $(UTSBASE)/sparc/Makefile.files
-include $(UTSBASE)/sparc/v9/Makefile.files
-include $(UTSBASE)/sun/Makefile.files
 include $(UTSBASE)/common/Makefile.files
 
 #
@@ -202,7 +200,7 @@ ALL_DEFS	 = $(MACHINE_DEFS) $(DEBUG_DEFS) $(OPTION_DEFS)
 #
 #	Common Drivers (usually pseudo drivers) (/kernel/drv):
 #
-DRV_KMODS	+= foo
+DRV_KMODS	+= 
 
 #
 #	Exec Class Modules (/kernel/exec):
@@ -232,7 +230,7 @@ SYS_KMODS	+=
 #
 #	'User' Modules (/kernel/misc):
 #
-MISC_KMODS	+=
+MISC_KMODS	+= drm
 
 #
 #	Software Cryptographic Providers (/kernel/crypto):

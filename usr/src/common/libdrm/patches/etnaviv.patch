@@ -1,7 +1,7 @@
---- libdrm-2.4.71/etnaviv/etnaviv_device.c.old	2016-10-18 23:11:06.163832408 +0300
-+++ libdrm-2.4.71/etnaviv/etnaviv_device.c	2016-10-18 23:12:18.805796392 +0300
-@@ -29,8 +29,8 @@
- #endif
+--- libdrm-2.4.109/etnaviv/etnaviv_device.c.orig	2021-11-25 21:33:02.000000000 +0000
++++ libdrm-2.4.109/etnaviv/etnaviv_device.c	2021-12-28 12:57:52.347557016 +0000
+@@ -25,8 +25,8 @@
+  */
  
  #include <stdlib.h>
 -#include <linux/stddef.h>

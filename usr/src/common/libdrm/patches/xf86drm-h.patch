@@ -25,30 +25,11 @@
 # or other dealings in this Software without prior written authorization
 # of the copyright holder.
 
-diff ... libdrm-2.4.75/xf86drm.h
---- libdrm-2.4.75-ref/xf86drm.h	Fri Jan 27 20:15:16 2017
-+++ libdrm-2.4.75/xf86drm.h	Sat Apr 22 12:58:07 2017
-@@ -472,6 +472,17 @@
- #endif /* architecture */
- #endif /* __GNUC__ >= 2 */
- 
-+#if defined(__SUNPRO_C)
-+#include <atomic.h>
-+#define atomic_cmpset_int(p, c, n) ((c == atomic_cas_uint(p, c, n)) ? 1 : 0)
-+#define DRM_CAS(lock,old,new,__ret)          \
-+               do {                          \
-+                                       unsigned int __result, __old = (old);\
-+                                       __result = !atomic_cmpset_int(lock,__old,new);\
-+                                       __ret = __result;          \
-+                               } while(0)
-+#endif
-+
- #ifndef DRM_CAS
- #define DRM_CAS(lock,old,new,ret) do { ret=1; } while (0) /* FAST LOCK FAILS */
+--- libdrm-2.4.109/xf86drm.h.orig	2021-11-25 21:33:02.000000000 +0000
++++ libdrm-2.4.109/xf86drm.h	2021-12-28 20:04:43.046788925 +0000
+@@ -959,6 +959,14 @@
+        (((modifier) >> 56) & 0xff)
  #endif
-@@ -844,6 +855,14 @@
- extern int drmGetDevice2(int fd, uint32_t flags, drmDevicePtr *device);
- extern int drmGetDevices2(uint32_t flags, drmDevicePtr devices[], int max_devices);
  
 +#ifdef __sun
 +extern int _sun_drm_get_major(void);
