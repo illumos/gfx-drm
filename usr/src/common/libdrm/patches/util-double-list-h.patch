@@ -1,6 +1,5 @@
-diff ... libdrm-2.4.71/util_double_list.h
---- libdrm-2.4.71/util_double_list.h.~1~	Tue Aug  2 16:22:45 2016
-+++ libdrm-2.4.71/util_double_list.h	Sat Nov 19 10:37:40 2016
+--- libdrm-2.4.109/util_double_list.h.orig	2021-11-25 21:33:02.000000000 +0000
++++ libdrm-2.4.109/util_double_list.h	2021-12-28 13:56:31.722430676 +0000
 @@ -110,7 +110,7 @@
  #ifndef container_of
  #define container_of(ptr, sample, member)				\

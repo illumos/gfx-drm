@@ -69,8 +69,3 @@ MODSTUB_OBJ =	modstubs.o
 LINT_DEFS	+= -Dsparc
 INC_PATH	+= -I$(UTSBASE)/sparc
 INC_PATH	+= -I$(UTSBASE)/sparc/krtld
-
-#
-# Inlined assembler routines.
-#
-INLINES		+= $(UTSBASE)/sparc/ml/sparc.il

@@ -22,16 +22,14 @@
 # Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
 #
-# Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+# Copyright 2022 Klaus Ziegler
 #
 
-LIBRARY=	libdrm.a
-VERS=		.2
+LIBRARY=	libdrm_etnaviv.a
+VERS=		.1
 
-# See common/libdrm/libdrm-*/Makefile.in am__objects
-OBJECTS=	xf86drm.o xf86drmHash.o \
-	xf86drmRandom.o xf86drmSL.o xf86drmMode.o \
-	sun_devinfo.o
+OBJECTS= etnaviv_bo_cache.o etnaviv_bo.o etnaviv_cmd_stream.o \
+	etnaviv_device.o etnaviv_gpu.o etnaviv_perfmon.o etnaviv_pipe.o
 
 include ../../Makefile.lib
 include $(SRC)/common/libdrm/Makefile.drm
@@ -40,24 +38,22 @@ LIBS =		$(DYNLIB)
 PCS =		$(LIBRARY:.a=.pc)
 
 MAPFILES=
-SRCDIR =	$(LIBDRM_CMN_DIR)
+SRCDIR =	$(LIBDRM_CMN_DIR)/etnaviv
 SRCS =		$(OBJECTS:%.o=$(SRCDIR)/%.c)
 
-CPPFLAGS +=	-I$(LIBDRM_CMN_DIR) \
-		-I../common
+CPPFLAGS +=	-I$(LIBDRM_CMN_DIR)
+CPPFLAGS +=	-I$(LIBDRM_CMN_DIR)/etnaviv
 
-# CFLAGS +=	$(CCVERBOSE)
-LDLIBS += -lm -ldevinfo -lc
+LDLIBS32 +=	-L$(ROOT)/usr/lib/xorg
+LDLIBS64 +=	-L$(ROOT)/usr/lib/xorg/$(MACH64)
+
+LDLIBS += -lpciaccess -ldrm -lc
 
 all : $(LIBS) $(PCS)
 
 lint :
 
-include ../Makefile.pc
+include ../../libdrm/Makefile.pc
 include ../../Makefile.targ
-
-objs/%.o pics/%.o: ../common/%.c
-	$(COMPILE.c) -o $@ $<
-	$(POST_PROCESS_O)
 
 .KEEP_STATE:

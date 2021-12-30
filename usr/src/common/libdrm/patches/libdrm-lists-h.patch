@@ -1,6 +1,5 @@
-diff ... libdrm-2.4.67/libdrm_lists.h
---- libdrm-2.4.67/libdrm_lists.h.~1~	Thu Feb 14 10:14:08 2013
-+++ libdrm-2.4.67/libdrm_lists.h	Sat Oct 29 18:53:40 2016
+--- libdrm-2.4.109/libdrm_lists.h.orig	2021-11-25 21:33:02.000000000 +0000
++++ libdrm-2.4.109/libdrm_lists.h	2021-12-28 13:56:31.711469288 +0000
 @@ -96,18 +96,18 @@
  	     (__item) = (__temp), (__temp) = (__item)->prev)
  

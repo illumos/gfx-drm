@@ -19,45 +19,56 @@
 # CDDL HEADER END
 #
 #
-# Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
+# Copyright 2006 Sun Microsystems, Inc.  All rights reserved.
 # Use is subject to license terms.
 #
-# Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+# Copyright 2022 Klaus Ziegler
 #
 
-LIBRARY=	libdrm.a
-VERS=		.2
+# include library definitions
+include ../Makefile.lib
 
-# See common/libdrm/libdrm-*/Makefile.in am__objects
-OBJECTS=	xf86drm.o xf86drmHash.o \
-	xf86drmRandom.o xf86drmSL.o xf86drmMode.o \
-	sun_devinfo.o
-
-include ../../Makefile.lib
 include $(SRC)/common/libdrm/Makefile.drm
 
-LIBS =		$(DYNLIB)
-PCS =		$(LIBRARY:.a=.pc)
+SUBDIRS = $(MACH)
+$(BUILD64)SUBDIRS += $(MACH64)
 
-MAPFILES=
-SRCDIR =	$(LIBDRM_CMN_DIR)
-SRCS =		$(OBJECTS:%.o=$(SRCDIR)/%.c)
+all :=		TARGET= all
+clean :=	TARGET= clean
+clobber :=	TARGET= clobber
+install :=	TARGET= install
+lint :=		TARGET= lint
 
-CPPFLAGS +=	-I$(LIBDRM_CMN_DIR) \
-		-I../common
+ROOTHDRDIR=	$(ROOT)/usr/include/drm
 
-# CFLAGS +=	$(CCVERBOSE)
-LDLIBS += -lm -ldevinfo -lc
-
-all : $(LIBS) $(PCS)
-
-lint :
-
-include ../Makefile.pc
-include ../../Makefile.targ
-
-objs/%.o pics/%.o: ../common/%.c
-	$(COMPILE.c) -o $@ $<
-	$(POST_PROCESS_O)
+HDRS= 	etnaviv_drm.h etnaviv_priv.h etnaviv_drmif.h
 
 .KEEP_STATE:
+
+install: all .WAIT $(SUBDIRS)
+
+all clean clobber lint: $(SUBDIRS)
+
+install_h: $(ROOTHDRS)
+
+# need to make ROOTHDRDIR
+$(ROOTHDRS) : $(ROOTHDRDIR)
+$(ROOTHDRDIR) :
+	$(INS.dir) $@
+
+check:	$(CHECKHDRS)
+
+_msg: # no msgfiles here
+
+$(POFILE):      pofile_MSGFILES
+
+# install rule for install_h target
+$(ROOTHDRDIR)/%: $(LIBDRM_CMN_DIR)/etnaviv/%
+	$(INS.file)
+
+$(SUBDIRS): FRC
+	@cd $@; pwd; $(MAKE) $(TARGET)
+
+FRC:
+
+include ../Makefile.targ

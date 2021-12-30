@@ -1,0 +1,23 @@
+
+Dec-30-2021 - Klaus Ziegler
+
+Issues left over up from release 2.4.109:
+
+1. This is just the upgrade from libdrm-2.4.75 to 2.4.109, no new functionality
+   of libdrm-2.4.109 has been checked or reflected in any manifest file, this
+   will be done in subsequent #PRs.
+
+2. Implement dynamic creation of the new header file:
+
+   - generated_static_table_fourcc.h
+
+   into the build process of gfx-drm using Python, the regular build process
+   of libdrm uses meson to build this header file. For the moment, the supplied
+   header file was created using a regular meson build of the library on SPARC
+   and Intel platforms to make sure there are no differences.
+
+3. The creation of manual pages has been disabled in usr/src/man/Makefile
+   for subdirectories man3 and man7, because illumos based distributions up to
+   date don't include rst2man(1) command.
+
+4. Get rid of 32bit support.
