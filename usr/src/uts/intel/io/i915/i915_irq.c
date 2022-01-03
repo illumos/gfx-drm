@@ -1445,6 +1445,7 @@ static void i915_get_extra_instdone(struct drm_device *dev,
 		break;
 	default:
 		DRM_INFO("Unsupported platform\n");
+		/* FALLTHROUGH */
 	case 7:
 		instdone[0] = I915_READ(GEN7_INSTDONE_1);
 		instdone[1] = I915_READ(GEN7_SC_INSTDONE);

@@ -1186,6 +1186,7 @@ void intel_hdmi_init_connector(struct intel_digital_port *intel_dig_port,
 	case PORT_A:
 		intel_encoder->hpd_pin = HPD_PORT_A;
 		/* Internal port only for eDP. */
+		/* FALLTHROUGH */
 	default:
 		BUG();
 	}

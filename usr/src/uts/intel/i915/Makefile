@@ -60,6 +60,7 @@ include $(UTSBASE)/intel/io/i915/Makefile.mod
 CERRWARN	+= -_gcc=-Wno-parentheses
 CERRWARN	+= -_gcc=-Wno-unused-function
 CERRWARN	+= -_gcc=-Wno-unused-variable
+CERRWARN	+= -_gcc=-Wno-unused-but-set-variable
 CERRWARN	+= -_gcc=-Wno-override-init
 
 #

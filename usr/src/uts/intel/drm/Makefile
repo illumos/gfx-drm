@@ -57,6 +57,7 @@ include $(UTSBASE)/common/io/drm/Makefile.mod
 CERRWARN	+= -_gcc=-Wno-parentheses
 CERRWARN	+= -_gcc=-Wno-unused-function
 CERRWARN	+= -_gcc=-Wno-unused-variable
+CERRWARN	+= -_gcc=-Wno-unused-but-set-variable
 
 #
 #	Define targets
