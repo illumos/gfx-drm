@@ -15,13 +15,13 @@
 
 <transform file path=opt/drm-tests/.+ -> default mode 0555>
 set name=pkg.fmri value=pkg:/system/test/libdrm@$(PKGVERS)
-set name=pkg.description value="DRM Library Unit Tests"
 set name=pkg.summary value="DRM Library Unit Test Suite"
+set name=pkg.description value="DRM Library Unit Tests"
 set name=info.classification \
     value=org.opensolaris.category.2008:Development/System
 set name=variant.arch value=$(ARCH)
-dir path=opt/drm-tests
-dir path=opt/drm-tests/$(ARCH64)
+dir  path=opt/drm-tests
+dir  path=opt/drm-tests/$(ARCH64)
 file path=opt/drm-tests/$(ARCH64)/drmdevice
 file path=opt/drm-tests/$(ARCH64)/drmsl
 file path=opt/drm-tests/$(ARCH64)/exynos_fimg2d_event
@@ -36,7 +36,6 @@ file path=opt/drm-tests/$(ARCH64)/modeprint
 file path=opt/drm-tests/$(ARCH64)/modetest
 file path=opt/drm-tests/$(ARCH64)/proptest
 file path=opt/drm-tests/$(ARCH64)/radeon_ttm
-file path=opt/drm-tests/$(ARCH64)/random
 file path=opt/drm-tests/$(ARCH64)/tegra_openclose
 file path=opt/drm-tests/$(ARCH64)/vbltest
 file path=opt/drm-tests/Run_all.sh
@@ -54,7 +53,6 @@ file path=opt/drm-tests/modeprint
 file path=opt/drm-tests/modetest
 file path=opt/drm-tests/proptest
 file path=opt/drm-tests/radeon_ttm
-file path=opt/drm-tests/random
 file path=opt/drm-tests/tegra_openclose
 file path=opt/drm-tests/vbltest
-depend fmri=pkg:/x11/library/libdrm type=require
+depend type=require fmri=pkg:/x11/library/libdrm

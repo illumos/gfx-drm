@@ -31,7 +31,7 @@ VERS=		.1
 # See common/libdrm/libdrm-*/intel/Makefile.in am_libdrm_intel_la_OBJECTS
 OBJECTS= \
 	intel_bufmgr.o intel_bufmgr_fake.o \
-	intel_bufmgr_gem.o intel_decode.o mm.o
+	intel_bufmgr_gem.o intel_decode.o mm.o intel_chipset.o
 
 include ../../Makefile.lib
 include $(SRC)/common/libdrm/Makefile.drm

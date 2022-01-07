@@ -29,9 +29,10 @@
 #	/opt/drm-tests/Run_all.sh > drm-tests.log
 #
 
-# Leaving out random (takes a while)
+# Leaving out random (takes a while), and in the meantime has been removed.
 # Also updatedraw (broken at the moment)
-TESTS="drmdevice dristat drmstat drmsl hash"
+# Deleted dristat drmstat from list below, also gone.
+TESTS="drmdevice drmsl hash"
 
 run_all() {
 for f in $TESTS ; do

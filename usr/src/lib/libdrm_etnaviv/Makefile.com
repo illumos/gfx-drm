@@ -18,25 +18,42 @@
 #
 # CDDL HEADER END
 #
-
 #
-# Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
+# Use is subject to license terms.
+#
+# Copyright 2022 Klaus Ziegler
 #
 
-set name=pkg.fmri value=pkg:/system/header/header-drm@$(PKGVERS)
-set name=pkg.summary value="DRM Driver Header Files"
-set name=pkg.description value="DRM Driver Header Files for x86 Workstations"
-set name=info.classification \
-    value=org.opensolaris.category.2008:Development/System
-set name=variant.arch value=i386
-dir  path=usr group=sys
-dir  path=usr/include
-dir  path=usr/include/drm
-file path=usr/include/drm/drm.h
-file path=usr/include/drm/drm_fourcc.h
-file path=usr/include/drm/drm_mode.h
-file path=usr/include/drm/drm_os_solaris.h
-file path=usr/include/drm/drm_sarea.h
-file path=usr/include/drm/i915_drm.h
-license usr/src/uts/common/io/drm/LICENSE_DRM \
-    license=usr/src/uts/common/io/drm/LICENSE_DRM
+LIBRARY=	libdrm_etnaviv.a
+VERS=		.1
+
+OBJECTS= etnaviv_bo_cache.o etnaviv_bo.o etnaviv_cmd_stream.o \
+	etnaviv_device.o etnaviv_gpu.o etnaviv_perfmon.o etnaviv_pipe.o
+
+include ../../Makefile.lib
+include $(SRC)/common/libdrm/Makefile.drm
+
+LIBS =		$(DYNLIB)
+PCS =		$(LIBRARY:.a=.pc)
+
+MAPFILES=
+SRCDIR =	$(LIBDRM_CMN_DIR)/etnaviv
+SRCS =		$(OBJECTS:%.o=$(SRCDIR)/%.c)
+
+CPPFLAGS +=	-I$(LIBDRM_CMN_DIR)
+CPPFLAGS +=	-I$(LIBDRM_CMN_DIR)/etnaviv
+
+LDLIBS32 +=	-L$(ROOT)/usr/lib/xorg
+LDLIBS64 +=	-L$(ROOT)/usr/lib/xorg/$(MACH64)
+
+LDLIBS += -lpciaccess -ldrm -lc
+
+all : $(LIBS) $(PCS)
+
+lint :
+
+include ../../libdrm/Makefile.pc
+include ../../Makefile.targ
+
+.KEEP_STATE:

@@ -14,9 +14,7 @@
 #
 
 SUBDIRS=	man1		\
-		man3		\
 		man3x		\
-		man7		\
 		man7d		\
 		man7i
 
