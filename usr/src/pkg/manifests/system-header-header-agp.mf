@@ -24,15 +24,15 @@
 #
 
 set name=pkg.fmri value=pkg:/system/header/header-agp@$(PKGVERS)
-set name=pkg.description value="AGP GART Header Files for x86 Workstations"
 set name=pkg.summary value="AGP GART Driver Header Files"
+set name=pkg.description value="AGP GART Header Files for x86 Workstations"
 set name=info.classification \
     value=org.opensolaris.category.2008:Development/System
 set name=variant.arch value=i386
-dir path=usr group=sys
-dir path=usr/include
-dir path=usr/include/sys
-dir path=usr/include/sys/agp
+dir  path=usr group=sys
+dir  path=usr/include
+dir  path=usr/include/sys
+dir  path=usr/include/sys/agp
 file path=usr/include/sys/agp/agp$(ARCH64)gart_io.h
 file path=usr/include/sys/agp/agpdefs.h
 file path=usr/include/sys/agp/agpgart_impl.h

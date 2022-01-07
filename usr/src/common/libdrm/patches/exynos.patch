@@ -1,7 +1,6 @@
-diff ... libdrm-2.4.73/exynos/exynos_drm.c
---- libdrm-2.4.73-ref/exynos/exynos_drm.c	Wed Aug 24 12:57:39 2016
-+++ libdrm-2.4.73/exynos/exynos_drm.c	Sat Dec 31 12:27:53 2016
-@@ -35,7 +35,7 @@
+--- libdrm-2.4.109/exynos/exynos_drm.c.orig	2021-11-25 21:33:02.000000000 +0000
++++ libdrm-2.4.109/exynos/exynos_drm.c	2021-12-28 12:57:52.350690170 +0000
+@@ -31,7 +31,7 @@
  #include <unistd.h>
  
  #include <sys/mman.h>
@@ -10,10 +9,9 @@ diff ... libdrm-2.4.73/exynos/exynos_drm.c
  
  #include <xf86drm.h>
  
-diff ... libdrm-2.4.73/exynos/exynos_fimg2d.c
---- libdrm-2.4.73-ref/exynos/exynos_fimg2d.c	Wed Aug 24 12:57:39 2016
-+++ libdrm-2.4.73/exynos/exynos_fimg2d.c	Sat Dec 31 17:52:27 2016
-@@ -21,7 +21,7 @@
+--- libdrm-2.4.109/exynos/exynos_fimg2d.c.orig	2021-11-25 21:33:02.000000000 +0000
++++ libdrm-2.4.109/exynos/exynos_fimg2d.c	2021-12-28 12:57:52.351308656 +0000
+@@ -30,7 +30,7 @@
  #include <assert.h>
  
  #include <sys/mman.h>
@@ -22,7 +20,7 @@ diff ... libdrm-2.4.73/exynos/exynos_fimg2d.c
  
  #include <xf86drm.h>
  
-@@ -698,9 +698,10 @@
+@@ -693,9 +693,10 @@
  	if (negative)
  		negative = 1;
  
@@ -35,7 +33,7 @@ diff ... libdrm-2.4.73/exynos/exynos_fimg2d.c
  		scale = 1;
  		scale_x = g2d_get_scaling(src_w, dst_w);
  		scale_y = g2d_get_scaling(src_h, dst_h);
-@@ -920,9 +921,10 @@
+@@ -915,9 +916,10 @@
  	unsigned int scale, gem_space;
  	unsigned int scale_x, scale_y;
  
@@ -48,10 +46,9 @@ diff ... libdrm-2.4.73/exynos/exynos_fimg2d.c
  		scale = 1;
  		scale_x = g2d_get_scaling(src_w, dst_w);
  		scale_y = g2d_get_scaling(src_h, dst_h);
-diff ... libdrm-2.4.73/tests/exynos/exynos_fimg2d_test.c
---- libdrm-2.4.73-ref/tests/exynos/exynos_fimg2d_test.c	Wed Aug 24 12:57:39 2016
-+++ libdrm-2.4.73/tests/exynos/exynos_fimg2d_test.c	Sat Dec 31 12:27:53 2016
-@@ -22,7 +22,7 @@
+--- libdrm-2.4.109/tests/exynos/exynos_fimg2d_test.c.orig	2021-11-25 21:33:02.000000000 +0000
++++ libdrm-2.4.109/tests/exynos/exynos_fimg2d_test.c	2021-12-28 12:57:52.351698146 +0000
+@@ -31,7 +31,7 @@
  #include <unistd.h>
  
  #include <sys/mman.h>

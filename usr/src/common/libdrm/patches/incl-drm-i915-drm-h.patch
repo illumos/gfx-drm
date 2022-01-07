@@ -25,10 +25,9 @@
 # or other dealings in this Software without prior written authorization
 # of the copyright holder.
 
-diff ... libdrm-2.4.75/include/drm/i915_drm.h
---- libdrm-2.4.75-ref/include/drm/i915_drm.h	Fri Jan 27 20:15:16 2017
-+++ libdrm-2.4.75/include/drm/i915_drm.h	Fri Apr 21 21:31:17 2017
-@@ -128,6 +128,7 @@
+--- libdrm-2.4.109/include/drm/i915_drm.h.orig	2021-11-25 21:33:02.000000000 +0000
++++ libdrm-2.4.109/include/drm/i915_drm.h	2021-12-28 13:56:31.703875110 +0000
+@@ -208,6 +208,7 @@
  	int pf_current_page;	/* which buffer is being displayed? */
  	int perf_boxes;		/* performance boxes to be displayed */
  	int width, height;      /* screen size in pixels */
@@ -36,7 +35,7 @@ diff ... libdrm-2.4.75/include/drm/i915_drm.h
  
  	drm_handle_t front_handle;
  	int front_offset;
-@@ -167,6 +168,8 @@
+@@ -247,6 +248,8 @@
  	int pipeB_w;
  	int pipeB_h;
  
@@ -45,7 +44,7 @@ diff ... libdrm-2.4.75/include/drm/i915_drm.h
  	/* fill out some space for old userspace triple buffer */
  	drm_handle_t unused_handle;
  	__u32 unused1, unused2, unused3;
-@@ -265,11 +268,14 @@
+@@ -349,11 +352,14 @@
  #define DRM_IOCTL_I915_FLUSH		DRM_IO ( DRM_COMMAND_BASE + DRM_I915_FLUSH)
  #define DRM_IOCTL_I915_FLIP		DRM_IO ( DRM_COMMAND_BASE + DRM_I915_FLIP)
  #define DRM_IOCTL_I915_BATCHBUFFER	DRM_IOW( DRM_COMMAND_BASE + DRM_I915_BATCHBUFFER, drm_i915_batchbuffer_t)
@@ -63,7 +62,7 @@ diff ... libdrm-2.4.75/include/drm/i915_drm.h
  #define DRM_IOCTL_I915_FREE             DRM_IOW( DRM_COMMAND_BASE + DRM_I915_FREE, drm_i915_mem_free_t)
  #define DRM_IOCTL_I915_INIT_HEAP        DRM_IOW( DRM_COMMAND_BASE + DRM_I915_INIT_HEAP, drm_i915_mem_init_heap_t)
  #define DRM_IOCTL_I915_CMDBUFFER	DRM_IOW( DRM_COMMAND_BASE + DRM_I915_CMDBUFFER, drm_i915_cmdbuffer_t)
-@@ -328,6 +334,15 @@
+@@ -416,6 +422,15 @@
  	struct drm_clip_rect *cliprects;	/* pointer to userspace cliprects */
  } drm_i915_batchbuffer_t;
  
@@ -79,7 +78,7 @@ diff ... libdrm-2.4.75/include/drm/i915_drm.h
  /* As above, but pass a pointer to userspace buffer which can be
   * validated by the kernel prior to sending to hardware.
   */
-@@ -340,6 +355,15 @@
+@@ -428,12 +443,25 @@
  	struct drm_clip_rect *cliprects;	/* pointer to userspace cliprects */
  } drm_i915_cmdbuffer_t;
  
@@ -95,7 +94,6 @@ diff ... libdrm-2.4.75/include/drm/i915_drm.h
  /* Userspace can request & wait on irq's:
   */
  typedef struct drm_i915_irq_emit {
-@@ -346,6 +370,10 @@
  	int *irq_seq;
  } drm_i915_irq_emit_t;
  
@@ -106,7 +104,7 @@ diff ... libdrm-2.4.75/include/drm/i915_drm.h
  typedef struct drm_i915_irq_wait {
  	int irq_seq;
  } drm_i915_irq_wait_t;
-@@ -421,6 +449,11 @@
+@@ -597,6 +625,11 @@
  	int *value;
  } drm_i915_getparam_t;
  
@@ -118,7 +116,7 @@ diff ... libdrm-2.4.75/include/drm/i915_drm.h
  /* Ioctl to set kernel params:
   */
  #define I915_SETPARAM_USE_MI_BATCHBUFFER_START            1
-@@ -444,6 +477,13 @@
+@@ -621,6 +654,13 @@
  	int *region_offset;	/* offset from start of fb or agp */
  } drm_i915_mem_alloc_t;
  

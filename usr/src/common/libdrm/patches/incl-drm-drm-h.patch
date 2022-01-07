@@ -25,10 +25,8 @@
 # or other dealings in this Software without prior written authorization
 # of the copyright holder.
 
-diff -u ... libdrm-2.4.73/include/drm/drm.h
-index 8adb9d5..f9bedd0 100644
---- libdrm-2.4.73-ref/include/drm/drm.h	Mon Nov 14 14:46:05 2016
-+++ libdrm-2.4.73/include/drm/drm.h	Mon Nov 28 14:32:21 2016
+--- libdrm-2.4.109/include/drm/drm.h.orig	2021-11-25 21:33:02.000000000 +0000
++++ libdrm-2.4.109/include/drm/drm.h	2021-12-28 13:56:31.700232551 +0000
 @@ -55,14 +55,40 @@
  typedef int64_t  __s64;
  typedef uint64_t __u64;
@@ -80,7 +78,7 @@ index 8adb9d5..f9bedd0 100644
 +	_DRM_GEM = 6		  /**< GEM object (XXX: Not libdrm?) */
  };
  
- /**
+ /*
 @@ -214,12 +241,13 @@
   * \sa drmAddMap().
   */
@@ -135,4 +133,4 @@ index 8adb9d5..f9bedd0 100644
 +	int fd;
  };
  
- /**
+ /*

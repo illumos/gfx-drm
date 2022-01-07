@@ -64,7 +64,7 @@ export PKGARCHIVE="${CODEMGR_WS}/packages/${MACH}/nightly"
 # export PKGPUBLISHER_REDIST='on-redist'
 
 # Package manifest format version.
-export PKGFMT_OUTPUT='v1'
+export PKGFMT_OUTPUT='v2'
 
 # Disable shadow compilation.
 export CW_NO_SHADOW='1'

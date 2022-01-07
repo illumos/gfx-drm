@@ -24,14 +24,14 @@
 #
 
 set name=pkg.fmri value=pkg:/system/header/header-drm@$(PKGVERS)
-set name=pkg.description value="DRM Driver Header Files for x86 Workstations"
 set name=pkg.summary value="DRM Driver Header Files"
+set name=pkg.description value="DRM Driver Header Files for x86 Workstations"
 set name=info.classification \
     value=org.opensolaris.category.2008:Development/System
 set name=variant.arch value=i386
-dir path=usr group=sys
-dir path=usr/include
-dir path=usr/include/drm
+dir  path=usr group=sys
+dir  path=usr/include
+dir  path=usr/include/drm
 file path=usr/include/drm/drm.h
 file path=usr/include/drm/drm_fourcc.h
 file path=usr/include/drm/drm_mode.h

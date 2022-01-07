@@ -1,19 +1,19 @@
-diff ... libdrm-2.4.75/xf86drm.c
---- libdrm-2.4.75-ref/xf86drm.c	Fri Jan 27 20:15:16 2017
-+++ libdrm-2.4.75/xf86drm.c	Sat Apr 22 13:29:51 2017
-@@ -98,6 +98,11 @@
+diff ... libdrm-2.4.109/xf86drm.c
+--- libdrm-2.4.109-ref/xf86drm.c	Thu Nov 25 15:33:02 2021
++++ libdrm-2.4.109/xf86drm.c	Mon Jan  3 17:41:28 2022
+@@ -97,6 +97,11 @@
  #endif
  #endif /* __OpenBSD__ */
  
 +#if defined(__sun)
 +/* Device majors are dynamic. */
-+#define DRM_MAJOR	(_sun_drm_get_major())
++#define DRM_MAJOR      (_sun_drm_get_major())
 +#endif /* __sun */
 +
  #ifndef DRM_MAJOR
  #define DRM_MAJOR 226 /* Linux */
  #endif
-@@ -365,9 +370,14 @@
+@@ -805,9 +810,14 @@
      if (stat(DRM_DIR_NAME, &st)) {
          if (!isroot)
              return DRM_ERR_NOT_ROOT;
@@ -28,7 +28,7 @@ diff ... libdrm-2.4.75/xf86drm.c
      }
  
      /* Check if the device node exists and create it if necessary. */
-@@ -374,8 +384,13 @@
+@@ -814,8 +824,13 @@
      if (stat(buf, &st)) {
          if (!isroot)
              return DRM_ERR_NOT_ROOT;
@@ -42,26 +42,7 @@ diff ... libdrm-2.4.75/xf86drm.c
      }
  
      if (drm_server_info && drm_server_info->get_perms) {
-@@ -421,6 +436,10 @@
-     if (st.st_rdev != dev) {
-         if (!isroot)
-             return DRM_ERR_NOT_ROOT;
-+#if defined(__sun)
-+	/* Let the system do this. */
-+	return DRM_ERR_NO_DEVICE;
-+#else
-         remove(buf);
-         mknod(buf, S_IFCHR | devmode, dev);
-         if (drm_server_info && drm_server_info->get_perms) {
-@@ -427,6 +446,7 @@
-             chown_check_return(buf, user, group);
-             chmod(buf, devmode);
-         }
-+#endif
-     }
-     fd = open(buf, O_RDWR, 0);
-     drmMsg("drmOpenDevice: open result is %d, (%s)\n",
-@@ -548,6 +568,7 @@
+@@ -997,6 +1012,7 @@
      }
  }
  
@@ -69,7 +50,7 @@ diff ... libdrm-2.4.75/xf86drm.c
  static const char *drmGetMinorName(int type)
  {
      switch (type) {
-@@ -561,6 +582,7 @@
+@@ -1010,6 +1026,7 @@
          return NULL;
      }
  }
@@ -77,22 +58,23 @@ diff ... libdrm-2.4.75/xf86drm.c
  
  /**
   * Open the device by bus ID.
-@@ -1124,7 +1146,7 @@
+@@ -1573,7 +1590,7 @@
      drm_map_t map;
  
      memclear(map);
 -    map.handle = (void *)(uintptr_t)handle;
-+    map.handle = (drm_handle_t)(uintptr_t)handle;
++    map.handle = (int)(void *)(uintptr_t)handle;
  
      if(drmIoctl(fd, DRM_IOCTL_RM_MAP, &map))
          return -errno;
-@@ -2712,6 +2734,15 @@
+@@ -3244,6 +3261,16 @@
      fstat(fd, &sbuf);
      d = sbuf.st_rdev;
  
 +#if defined(__sun)
 +    /*
-+     * Get rid of clone-open bits in the minor number.
++     * Get rid of clone-open bits in the minor number,
++     * otherwise it will not match any /dev nodes.
 +     * See: the drm driver drm_sun_open()
 +     * Don't have DRM_CLONEID_NBITS here.
 +     */
@@ -102,10 +84,10 @@ diff ... libdrm-2.4.75/xf86drm.c
      for (i = 0; i < DRM_MAX_MINOR; i++) {
          snprintf(name, sizeof name, DRM_DEV_NAME, DRM_DIR_NAME, i);
          if (stat(name, &sbuf) == 0 && sbuf.st_rdev == d)
-@@ -2833,6 +2864,25 @@
+@@ -3431,6 +3458,25 @@
+          id + drmGetMinorBase(type));
  
- out_close_dir:
-     closedir(sysdir);
+     return strdup(name);
 +#elif defined(__sun)	/* illumos, OSol */
 +	struct stat sbuf;
 +	char *path = NULL;
@@ -124,13 +106,13 @@ diff ... libdrm-2.4.75/xf86drm.c
 +	err = _sun_drm_find_device(min, &path);
 +	if (err == 0)
 +		return (path);
-+	/* else ... (ret NULL at endif) */
++	return (NULL);
  #else
      struct stat sbuf;
      char buf[PATH_MAX + 1];
-@@ -2962,6 +3012,20 @@
-     return -EINVAL;
- #elif defined(__OpenBSD__)
+@@ -3575,6 +3621,20 @@
+     return subsystem_type;
+ #elif defined(__OpenBSD__) || defined(__DragonFly__) || defined(__FreeBSD__)
      return DRM_BUS_PCI;
 +#elif defined(__sun)	/* illumos, OSol */
 +    char *path = NULL;
@@ -149,10 +131,10 @@ diff ... libdrm-2.4.75/xf86drm.c
  #else
  #warning "Missing implementation of drmParseSubsystemType"
      return -EINVAL;
-@@ -3017,6 +3081,21 @@
-     info->func = pinfo.func;
- 
+@@ -3710,6 +3770,21 @@
      return 0;
+ #elif defined(__FreeBSD__)
+     return get_sysctl_pci_bus_info(maj, min, info);
 +#elif defined(__sun)	/* illumos, OSol */
 +    char *path = NULL;
 +    int err;
@@ -171,8 +153,8 @@ diff ... libdrm-2.4.75/xf86drm.c
  #else
  #warning "Missing implementation of drmParsePciBusInfo"
      return -EINVAL;
-@@ -3182,6 +3261,21 @@
-     device->subdevice_id = pinfo.subdevice_id;
+@@ -3923,6 +3998,21 @@
+     device->revision_id = results[0].pc_revid;
  
      return 0;
 +#elif defined(__sun)	/* illumos, OSol */
@@ -192,4 +174,88 @@ diff ... libdrm-2.4.75/xf86drm.c
 +    return err;
  #else
  #warning "Missing implementation of drmParsePciDeviceInfo"
+     return -EINVAL;
+@@ -4152,6 +4242,20 @@
+     info->dev = dev;
+ 
+     return 0;
++#elif defined(__sun)	/* illumos, OSol */
++    char *path = NULL;
++    int ret;
++
++    if (maj != DRM_MAJOR)
++	    return -EINVAL;
++
++    ret = _sun_drm_find_device(min, &path);
++    if (ret != 0)
++	    return (ret);
++
++    ret = _sun_drm_get_subsystem(path);
++    free(path);
++    return (ret);
+ #else
+ #warning "Missing implementation of drmParseUsbBusInfo"
+     return -EINVAL;
+@@ -4183,6 +4287,20 @@
+     info->product = product;
+ 
+     return 0;
++#elif defined(__sun)	/* illumos, OSol */
++    char *path = NULL;
++    int ret;
++
++    if (maj != DRM_MAJOR)
++	    return -EINVAL;
++
++    ret = _sun_drm_find_device(min, &path);
++    if (ret != 0)
++	    return (ret);
++
++    ret = _sun_drm_get_subsystem(path);
++    free(path);
++    return (ret);
+ #else
+ #warning "Missing implementation of drmParseUsbDeviceInfo"
+     return -EINVAL;
+@@ -4257,6 +4375,20 @@
+     free(name);
+ 
+     return 0;
++#elif defined(__sun)	/* illumos, OSol */
++    char *path = NULL;
++    int ret;
++
++    if (maj != DRM_MAJOR)
++	    return -EINVAL;
++
++    ret = _sun_drm_find_device(min, &path);
++    if (ret != 0)
++	    return (ret);
++
++    ret = _sun_drm_get_subsystem(path);
++    free(path);
++    return (ret);
+ #else
+ #warning "Missing implementation of drmParseOFBusInfo"
+     return -EINVAL;
+@@ -4317,6 +4449,20 @@
+ 
+     free(*compatible);
+     return err;
++#elif defined(__sun)	/* illumos, OSol */
++    char *path = NULL;
++    int ret;
++
++    if (maj != DRM_MAJOR)
++	    return -EINVAL;
++
++    ret = _sun_drm_find_device(min, &path);
++    if (ret != 0)
++	    return (ret);
++
++    ret = _sun_drm_get_subsystem(path);
++    free(path);
++    return (ret);
+ #else
+ #warning "Missing implementation of drmParseOFDeviceInfo"
      return -EINVAL;

@@ -15,24 +15,16 @@
 
 set name=pkg.fmri \
     value=pkg:/x11/library/libdrm@$(LIBDRM_VERS),$(PKGVERS_BUILTON)-$(PKGVERS_BRANCH)
-set name=pkg.description value="Direct Rendering Manager (DRM) Libraries"
 set name=pkg.summary value="DRM Libraries"
+set name=pkg.description value="Direct Rendering Manager (DRM) Libraries"
 set name=info.classification value=System/X11
 set name=info.source-url \
-    value=http://dri.freedesktop.org/libdrm-$(LIBDRM_VERS).tar.bz2
+    value=http://dri.freedesktop.org/libdrm-$(LIBDRM_VERS).tar.xz
 set name=info.upstream-url value=http://dri.freedesktop.org
 #
-dir path=usr group=sys
-dir path=usr/include
-dir path=usr/include/drm
-dir path=usr/include/exynos
-dir path=usr/include/freedreno
-dir path=usr/lib
-dir path=usr/lib/$(ARCH64)
-dir path=usr/lib/$(ARCH64)/pkgconfig group=other
-dir path=usr/lib/pkgconfig group=other
-dir path=usr/lib/xorg
-dir path=usr/lib/xorg/$(ARCH64)
+dir  path=usr group=sys
+dir  path=usr/include
+dir  path=usr/include/drm
 #
 file path=usr/include/drm/amdgpu.h
 file path=usr/include/drm/amdgpu_drm.h
@@ -68,75 +60,95 @@ file path=usr/include/drm/vc4_drm.h
 file path=usr/include/drm/via_drm.h
 #file path=usr/include/drm/virtgpu_drm.h
 file path=usr/include/drm/vmwgfx_drm.h
+dir  path=usr/include/exynos
 file path=usr/include/exynos/exynos_drm.h
 file path=usr/include/exynos/exynos_fimg2d.h
+dir  path=usr/include/freedreno
 file path=usr/include/freedreno/freedreno_drmif.h
 file path=usr/include/freedreno/freedreno_ringbuffer.h
+#
+link path=usr/include/libdrm target=drm
 file path=usr/include/libkms/libkms.h
 file path=usr/include/libsync.h
 file path=usr/include/omap/omap_drm.h
 file path=usr/include/xf86drm.h
 file path=usr/include/xf86drmMode.h
+dir  path=usr/lib
+dir  path=usr/lib/$(ARCH64)
+dir  path=usr/lib/$(ARCH64)/pkgconfig group=other
 #
 file path=usr/lib/$(ARCH64)/pkgconfig/libdrm.pc
 file path=usr/lib/$(ARCH64)/pkgconfig/libdrm_amdgpu.pc
+file path=usr/lib/$(ARCH64)/pkgconfig/libdrm_etnaviv.pc
 file path=usr/lib/$(ARCH64)/pkgconfig/libdrm_exynos.pc
 file path=usr/lib/$(ARCH64)/pkgconfig/libdrm_freedreno.pc
 file path=usr/lib/$(ARCH64)/pkgconfig/libdrm_intel.pc
+file path=usr/lib/$(ARCH64)/pkgconfig/libdrm_nouveau.pc
 file path=usr/lib/$(ARCH64)/pkgconfig/libdrm_omap.pc
 file path=usr/lib/$(ARCH64)/pkgconfig/libdrm_radeon.pc
 file path=usr/lib/$(ARCH64)/pkgconfig/libdrm_tegra.pc
 file path=usr/lib/$(ARCH64)/pkgconfig/libkms.pc
+dir  path=usr/lib/pkgconfig group=other
 file path=usr/lib/pkgconfig/libdrm.pc
 file path=usr/lib/pkgconfig/libdrm_amdgpu.pc
+file path=usr/lib/pkgconfig/libdrm_etnaviv.pc
 file path=usr/lib/pkgconfig/libdrm_exynos.pc
 file path=usr/lib/pkgconfig/libdrm_freedreno.pc
 file path=usr/lib/pkgconfig/libdrm_intel.pc
+file path=usr/lib/pkgconfig/libdrm_nouveau.pc
 file path=usr/lib/pkgconfig/libdrm_omap.pc
 file path=usr/lib/pkgconfig/libdrm_radeon.pc
 file path=usr/lib/pkgconfig/libdrm_tegra.pc
 file path=usr/lib/pkgconfig/libkms.pc
+dir  path=usr/lib/xorg
+dir  path=usr/lib/xorg/$(ARCH64)
+link path=usr/lib/xorg/$(ARCH64)/libdrm.so target=libdrm.so.2
 #
 file path=usr/lib/xorg/$(ARCH64)/libdrm.so.2
+link path=usr/lib/xorg/$(ARCH64)/libdrm_amdgpu.so target=libdrm_amdgpu.so.1
 file path=usr/lib/xorg/$(ARCH64)/libdrm_amdgpu.so.1
+link path=usr/lib/xorg/$(ARCH64)/libdrm_etnaviv.so target=libdrm_etnaviv.so.1
+file path=usr/lib/xorg/$(ARCH64)/libdrm_etnaviv.so.1
+link path=usr/lib/xorg/$(ARCH64)/libdrm_exynos.so target=libdrm_exynos.so.1
 file path=usr/lib/xorg/$(ARCH64)/libdrm_exynos.so.1
+link path=usr/lib/xorg/$(ARCH64)/libdrm_freedreno.so \
+    target=libdrm_freedreno.so.1
 file path=usr/lib/xorg/$(ARCH64)/libdrm_freedreno.so.1
+link path=usr/lib/xorg/$(ARCH64)/libdrm_intel.so target=libdrm_intel.so.1
 file path=usr/lib/xorg/$(ARCH64)/libdrm_intel.so.1
+link path=usr/lib/xorg/$(ARCH64)/libdrm_nouveau.so target=libdrm_nouveau.so.1
+file path=usr/lib/xorg/$(ARCH64)/libdrm_nouveau.so.1
+link path=usr/lib/xorg/$(ARCH64)/libdrm_omap.so target=libdrm_omap.so.1
 file path=usr/lib/xorg/$(ARCH64)/libdrm_omap.so.1
+link path=usr/lib/xorg/$(ARCH64)/libdrm_radeon.so target=libdrm_radeon.so.1
 file path=usr/lib/xorg/$(ARCH64)/libdrm_radeon.so.1
+link path=usr/lib/xorg/$(ARCH64)/libdrm_tegra.so target=libdrm_tegra.so.0
 file path=usr/lib/xorg/$(ARCH64)/libdrm_tegra.so.0
+link path=usr/lib/xorg/$(ARCH64)/libkms.so target=libkms.so.1
 file path=usr/lib/xorg/$(ARCH64)/libkms.so.1
+link path=usr/lib/xorg/libdrm.so target=libdrm.so.2
 file path=usr/lib/xorg/libdrm.so.2
+link path=usr/lib/xorg/libdrm_amdgpu.so target=libdrm_amdgpu.so.1
 file path=usr/lib/xorg/libdrm_amdgpu.so.1
+link path=usr/lib/xorg/libdrm_etnaviv.so target=libdrm_etnaviv.so.1
+file path=usr/lib/xorg/libdrm_etnaviv.so.1
+link path=usr/lib/xorg/libdrm_exynos.so target=libdrm_exynos.so.1
 file path=usr/lib/xorg/libdrm_exynos.so.1
+link path=usr/lib/xorg/libdrm_freedreno.so target=libdrm_freedreno.so.1
 file path=usr/lib/xorg/libdrm_freedreno.so.1
+link path=usr/lib/xorg/libdrm_intel.so target=libdrm_intel.so.1
 file path=usr/lib/xorg/libdrm_intel.so.1
+link path=usr/lib/xorg/libdrm_nouveau.so target=libdrm_nouveau.so.1
+file path=usr/lib/xorg/libdrm_nouveau.so.1
+link path=usr/lib/xorg/libdrm_omap.so target=libdrm_omap.so.1
 file path=usr/lib/xorg/libdrm_omap.so.1
+link path=usr/lib/xorg/libdrm_radeon.so target=libdrm_radeon.so.1
 file path=usr/lib/xorg/libdrm_radeon.so.1
+link path=usr/lib/xorg/libdrm_tegra.so target=libdrm_tegra.so.0
 file path=usr/lib/xorg/libdrm_tegra.so.0
+link path=usr/lib/xorg/libkms.so target=libkms.so.1
 file path=usr/lib/xorg/libkms.so.1
 #
 license usr/src/common/libdrm/LICENSE_LIBDRM \
     license=usr/src/common/libdrm/LICENSE_LIBDRM
-#
-link path=usr/include/libdrm target=drm
-link path=usr/lib/xorg/$(ARCH64)/libdrm.so target=libdrm.so.2
-link path=usr/lib/xorg/$(ARCH64)/libdrm_amdgpu.so target=libdrm_amdgpu.so.1
-link path=usr/lib/xorg/$(ARCH64)/libdrm_exynos.so target=libdrm_exynos.so.1
-link path=usr/lib/xorg/$(ARCH64)/libdrm_freedreno.so \
-    target=libdrm_freedreno.so.1
-link path=usr/lib/xorg/$(ARCH64)/libdrm_intel.so target=libdrm_intel.so.1
-link path=usr/lib/xorg/$(ARCH64)/libdrm_omap.so target=libdrm_omap.so.1
-link path=usr/lib/xorg/$(ARCH64)/libdrm_radeon.so target=libdrm_radeon.so.1
-link path=usr/lib/xorg/$(ARCH64)/libdrm_tegra.so target=libdrm_tegra.so.0
-link path=usr/lib/xorg/$(ARCH64)/libkms.so target=libkms.so.1
-link path=usr/lib/xorg/libdrm.so target=libdrm.so.2
-link path=usr/lib/xorg/libdrm_amdgpu.so target=libdrm_amdgpu.so.1
-link path=usr/lib/xorg/libdrm_exynos.so target=libdrm_exynos.so.1
-link path=usr/lib/xorg/libdrm_freedreno.so target=libdrm_freedreno.so.1
-link path=usr/lib/xorg/libdrm_intel.so target=libdrm_intel.so.1
-link path=usr/lib/xorg/libdrm_omap.so target=libdrm_omap.so.1
-link path=usr/lib/xorg/libdrm_radeon.so target=libdrm_radeon.so.1
-link path=usr/lib/xorg/libdrm_tegra.so target=libdrm_tegra.so.0
-link path=usr/lib/xorg/libkms.so target=libkms.so.1
-depend fmri=pkg:/driver/graphics/drm type=require
+depend type=require fmri=pkg:/driver/graphics/drm

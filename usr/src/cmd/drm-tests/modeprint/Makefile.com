@@ -20,11 +20,13 @@ include	../../Makefile.drm
 
 SRCDIR= $(LIBDRM_CMN_DIR)/tests/modeprint
 
-LDLIBS	 +=	-ldrm -lm
+LDLIBS	 +=	-ldrm -lm -lutil
 
 LDLIBS32 +=	-L$(ROOT)/usr/lib/xorg \
+		-L$(SRC)/cmd/drm-tests/util/$(MACH) \
 		-R/usr/lib/xorg
 LDLIBS64 +=	-L$(ROOT)/usr/lib/xorg/$(MACH64) \
+		-L$(SRC)/cmd/drm-tests/util/$(MACH64) \
 		-R/usr/lib/xorg/$(MACH64)
 
 all:	 $(PROG)

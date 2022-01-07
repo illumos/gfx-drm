@@ -179,7 +179,7 @@ ELFEDIT=	/usr/bin/elfedit
 ELFSIGN=	/usr/bin/elfsign
 DTRACE=		/usr/sbin/dtrace -xnolibs
 UNIQ=		/usr/bin/uniq
-TAR=		/usr/bin/tar
+TAR=		/usr/bin/gtar
 ASTBINDIR=	/usr/ast/bin
 MSGCC=		$(ASTBINDIR)/msgcc
 MSGFMT=		/usr/bin/msgfmt -s
@@ -300,7 +300,7 @@ CCABS32=		-Wc,-xcode=abs32
 #
 # generate v9 code which tolerates callers using the v7 ABI, for the sake of
 # system calls.
-CC32BITCALLERS=		-_gcc=-massume-32bit-callers
+CC32BITCALLERS=	
 
 # GCC, especially, is increasingly beginning to auto-inline functions and
 # sadly does so separately not under the general -fno-inline-functions
