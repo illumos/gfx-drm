@@ -59,7 +59,7 @@
 int drm_sysfs_device_add(struct drm_minor *minor)
 {
 	struct drm_device *dev = minor->dev;
-	gfxp_vgatext_softc_ptr_t gfxp;
+	gfxp_fb_softc_ptr_t gfxp;
 	int ret;
 
 	switch (minor->type) {
@@ -75,8 +75,8 @@ int drm_sysfs_device_add(struct drm_minor *minor)
 
 	case DRM_MINOR_VGATEXT:
 		/* Generic graphics initialization */
-		gfxp = gfxp_vgatext_softc_alloc();
-		ret = gfxp_vgatext_attach(dev->devinfo, DDI_ATTACH, gfxp);
+		gfxp = gfxp_fb_softc_alloc();
+		ret = gfxp_fb_attach(dev->devinfo, DDI_ATTACH, gfxp);
 		if (ret != DDI_SUCCESS) {
 			DRM_ERROR("gfxp_vgatext_attach failed");
 			return (EFAULT);
@@ -126,9 +126,9 @@ void drm_sysfs_device_remove(struct drm_minor *minor)
 
 	case DRM_MINOR_VGATEXT:
 		if (minor->private) {
-			(void) gfxp_vgatext_detach(minor->dev->devinfo,
+			(void) gfxp_fb_detach(minor->dev->devinfo,
 			    DDI_DETACH, minor->private);
-			gfxp_vgatext_softc_free(minor->private);
+			gfxp_fb_softc_free(minor->private);
 			minor->private = NULL;
 		}
 	/* FALLTHROUGH */
