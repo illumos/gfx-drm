@@ -692,7 +692,7 @@ drm_sun_ioctl(dev_t dev_id, int cmd, intptr_t arg, int mode, cred_t *credp,
 	}
 
 	if (DRM_MINOR_IS_VGATEXT(minor_id))
-		return (gfxp_vgatext_ioctl(dev_id, cmd, arg, mode, credp,
+		return (gfxp_fb_ioctl(dev_id, cmd, arg, mode, credp,
 		    rvalp, minor->private));
 
 	if (DRM_MINOR_IS_AGPMASTER(minor_id))
@@ -726,7 +726,7 @@ drm_sun_devmap(dev_t dev_id, devmap_cookie_t dhp, offset_t offset,
 	dev = minor->dev;
 
 	if (DRM_MINOR_IS_VGATEXT(minor_id))
-		return (gfxp_vgatext_devmap(dev_id, dhp, offset, len,
+		return (gfxp_fb_devmap(dev_id, dhp, offset, len,
 		    maplen, model, minor->private));
 
 	if (DRM_MINOR_IS_AGPMASTER(minor_id))
